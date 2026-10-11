@@ -73,7 +73,24 @@ def _close(a, b, tol: float) -> bool:
 
 
 def _row_close(r1: tuple, r2: tuple, tol: float) -> bool:
-    return len(r1) == len(r2) and all(_close(a, b, tol) for a, b in zip(r1, r2))
+    if len(r1) != len(r2):
+        return False
+    for a, b in zip(r1, r2):
+        if _close(a, b, tol):
+            continue
+        # An entity named by id on one side and by name on the other ("464" vs
+        # "Account 0464") is the same row; the measure columns still have to match.
+        if (_num(a) is None) != (_num(b) is None) and isinstance(a, (str, int)) \
+                and isinstance(b, (str, int)) and _is_label_column(a, b):
+            continue
+        return False
+    return True
+
+
+def _is_label_column(a, b) -> bool:
+    text, num = (a, b) if _num(a) is None else (b, a)
+    digits = re.sub(r"\D", "", str(text))
+    return bool(digits) and int(digits) == int(num)
 
 
 def _key(row: tuple) -> tuple:

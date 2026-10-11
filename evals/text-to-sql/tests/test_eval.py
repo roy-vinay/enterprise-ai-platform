@@ -410,3 +410,9 @@ def test_null_result_message_is_honest(env):
     c = case(cases, "c01")
     r = _run(c, c["reference_sql"].replace("2026-09-01", "2030-01-01"), wh, model, 0)
     assert not r.passed and "NULL" in r.reason
+
+
+def test_entity_by_id_matches_entity_by_name():
+    assert compare([("Account 0464", 456495.81)], [(464, 456495.81)], "top_n_ordered", 0.001)[0]
+    assert not compare([("Account 0464", 456495.81)], [(465, 456495.81)], "top_n_ordered", 0.001)[0]
+    assert not compare([("Account 0464", 456495.81)], [(464, 400000.0)], "top_n_ordered", 0.001)[0]

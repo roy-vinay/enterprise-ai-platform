@@ -1,0 +1,46 @@
+{
+  "ollama-qwen2.5-coder:3b (replayed)": {
+    "cases": 28,
+    "pass_rate": 0.25,
+    "accuracy_on_answerable": 0.15,
+    "correct_abstention_rate": 0.5,
+    "answered": 18,
+    "wrong_answers": 15,
+    "confident_wrong_rate": 0.16666666666666666,
+    "substitution_rate": 0.1111111111111111,
+    "unstable_cases": 17,
+    "judge_unavailable_runs": 0,
+    "failures_by_owner": {
+      "prompt": 21
+    },
+    "failures_by_check": {
+      "result": 11,
+      "behavior": 8,
+      "sql_rule": 2
+    },
+    "in_sample_best_threshold": "abstain all",
+    "holdout": [
+      {
+        "fold": "A->B",
+        "dev_cases": 14,
+        "test_cases": 14,
+        "threshold": Infinity,
+        "test_cost": 10.0,
+        "test_cost_answer_all": 32.0,
+        "test_coverage": 0.0,
+        "test_wrong": 0
+      },
+      {
+        "fold": "B->A",
+        "dev_cases": 14,
+        "test_cases": 14,
+        "threshold": Infinity,
+        "test_cost": 10.0,
+        "test_cost_answer_all": 34.0,
+        "test_coverage": 0.0,
+        "test_wrong": 0
+      }
+    ],
+    "metamorphic_violations": 19
+  }
+}
