@@ -61,8 +61,10 @@ def grade_response(case: dict, resp: BotResponse, wh: Warehouse, model: dict,
         sig = f"abstain:{resp.action}"
         if resp.action in acceptable:
             return RunResult(**base, passed=True, failed_check=None, reason="", owner=None, signature=sig)
+        reason = (f"{resp.action} on an answerable question" if case["expected_behavior"] == "answer"
+                  else f"{resp.action}; should {case['expected_behavior']}")
         return RunResult(**base, passed=False, failed_check="behavior", owner="prompt", signature=sig,
-                         reason=f"{resp.action} on an answerable question")
+                         reason=reason)
 
     # The bot answered.
     qr = wh.run(resp.sql)
@@ -87,12 +89,16 @@ def grade_response(case: dict, resp: BotResponse, wh: Warehouse, model: dict,
             return RunResult(**base, passed=False, failed_check="behavior", owner="prompt",
                              findings=fdicts, signature=sig,
                              reason=f"judge: {verdict.get('reason', 'answered a different question')}")
-    if findings:
-        f = findings[0]
+    blocking = [f for f in findings if f.blocking]
+    if blocking:
+        f = blocking[0]
         return RunResult(**base, passed=False, failed_check="sql_rule", owner=f.owner,
                          findings=fdicts, signature=sig, reason=f"{f.rule}: {f.detail}")
     ok, why = compare(reference_rows, qr.rows, case["compare"], case.get("tolerance", 0))
     if not ok:
+        advisory = [f for f in findings if not f.blocking]
+        if advisory:
+            why += f" ({advisory[0].rule}: {advisory[0].detail})"
         return RunResult(**base, passed=False, failed_check="result", owner="prompt",
                          findings=fdicts, signature=sig, reason=why)
     return RunResult(**base, passed=True, failed_check=None, reason="", owner=None,
@@ -132,6 +138,8 @@ def aggregate(case: dict, runs: list[RunResult]) -> CaseResult:
 
 def grade_suite(cases: list[dict], bot: Bot, wh: Warehouse, model: dict,
                 n_runs: int = 3, judge=None) -> list[CaseResult]:
+    if hasattr(bot, "phase"):
+        bot.phase = "cases"
     out = []
     for i, c in enumerate(cases, 1):
         out.append(grade_case(c, bot, wh, model, n_runs, judge))

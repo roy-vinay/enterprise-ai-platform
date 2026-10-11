@@ -14,7 +14,7 @@ from t2s_eval.grade import grade_response, grade_suite, summarize
 def env():
     model = semantic.load(config.MODEL)
     cases = config.load_cases()
-    wh = Warehouse(str(config.ensure_warehouse()), model["row_cap"])
+    wh = Warehouse(str(config.ensure_warehouse()), model["row_cap"], str(model["as_of"]))
     return model, cases, config.load_relations(), wh
 
 
@@ -314,3 +314,99 @@ def test_replay_reproduces_a_recorded_run(env, tmp_path):
     first = grade_suite(cases, rec, wh, model, n_runs=3)
     again = grade_suite(cases, ReplayBot(tmp_path / "r.jsonl"), wh, model, n_runs=3)
     assert [r.passed for r in first] == [r.passed for r in again]
+
+
+# ------------------------------------------------ second review (regressions)
+
+class _AlwaysError:
+    name = "down"
+
+    def ask(self, question, run=0):
+        return BotResponse("error", error="model unavailable")
+
+
+def test_all_errors_never_make_a_relation_hold(env):
+    _, cases, relations, wh = env
+    for rel in relations + metamorphic.generated_relations(cases):
+        res = metamorphic.check_relation(rel, _AlwaysError(), wh)
+        assert res.status == "inconclusive", (rel["id"], res.status)
+
+
+def test_consistent_refusal_still_holds(env):
+    _, _, _, wh = env
+
+    class Refuser:
+        name = "refuser"
+
+        def ask(self, q, run=0):
+            return BotResponse("refuse")
+
+    rel = {"id": "t", "type": "equivalent", "questions": ["a", "b"]}
+    assert metamorphic.check_relation(rel, Refuser(), wh).status == "holds"
+
+
+class _Drifting:
+    """Answers differently every time it is called, like a sampled model."""
+    name = "drifting"
+
+    def __init__(self, model, cases):
+        self.inner = SimulatedBot(model, cases, "perfect")
+        self.calls = 0
+
+    def ask(self, question, run=0):
+        self.calls += 1
+        r = self.inner.ask(question, run)
+        if self.calls % 2 == 0 and r.sql:
+            r.sql = r.sql.replace("2026", "2025")  # every second call is wrong
+        return r
+
+
+def test_replay_keeps_every_response_when_questions_repeat(env, tmp_path):
+    from t2s_eval.bots.replay import RecordingBot, ReplayBot
+    model, cases, relations, wh = env
+    rec = RecordingBot(_Drifting(model, cases), tmp_path / "r.jsonl")
+    live_cases = grade_suite(cases, rec, wh, model, n_runs=3)
+    live_rels = metamorphic.run_all(relations, cases, rec, wh)
+    rep = ReplayBot(tmp_path / "r.jsonl")
+    again_cases = grade_suite(cases, rep, wh, model, n_runs=3)
+    again_rels = metamorphic.run_all(relations, cases, rep, wh)
+    assert [r.passed for r in live_cases] == [r.passed for r in again_cases]
+    assert [[x.signature for x in r.runs] for r in live_cases] == \
+           [[x.signature for x in r.runs] for r in again_cases]
+    assert [r.status for r in live_rels] == [r.status for r in again_rels]
+    assert rep.unused() == 0
+
+
+# ------------------------------------------- harness bugs found by a real model
+
+def test_year_quarter_functions_count_as_a_time_filter(env):
+    model, cases, _, wh = env
+    c = case(cases, "c04")
+    sql = ("SELECT SUM(amount_usd) FROM invoices WHERE status = 'paid' AND is_deleted = FALSE "
+           "AND YEAR(invoice_date) = 2026 AND QUARTER(invoice_date) = 3 "
+           "AND account_id NOT IN (SELECT account_id FROM accounts WHERE is_test)")
+    assert _run(c, sql, wh, model, 0).passed
+
+
+def test_function_arguments_are_not_filter_values(env):
+    model, cases, _, _ = env
+    for sql in ["SELECT plan, SUM(mrr_usd) FROM mrr_monthly WHERE strftime('%Y-%m', month) = '2026-09' "
+                "AND account_id NOT IN (SELECT account_id FROM accounts WHERE is_test) GROUP BY plan",
+                "SELECT SUM(mrr_usd) FROM mrr_monthly WHERE month = DATE_TRUNC('month', CURRENT_DATE - "
+                "INTERVAL '1 month') AND account_id NOT IN (SELECT account_id FROM accounts WHERE is_test)"]:
+        assert not any(f.rule == "ungrounded_filter_value" for f in rules.check("q 2026", sql, model))
+
+
+def test_current_date_means_the_eval_date(env):
+    model, cases, _, wh = env
+    c = case(cases, "c02")  # "last month" with today = 2026-10-01
+    sql = ("SELECT SUM(mrr_usd) FROM mrr_monthly WHERE month = DATE_TRUNC('month', CURRENT_DATE - "
+           "INTERVAL '1 month') AND account_id NOT IN (SELECT account_id FROM accounts WHERE is_test)")
+    assert _run(c, sql, wh, model, 0).passed
+
+
+def test_null_result_message_is_honest(env):
+    model, cases, _, wh = env
+    c = case(cases, "c01")
+    r = _run(c, c["reference_sql"].replace("2026-09-01", "2030-01-01"), wh, model, 0)
+    assert not r.passed and "NULL" in r.reason

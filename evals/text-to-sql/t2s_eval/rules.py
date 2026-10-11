@@ -24,15 +24,35 @@ class Finding:
     rule: str
     detail: str
     owner: str  # who usually fixes it: semantic_model | prompt | app
+    # Blocking findings fail the run even when today's number happens to match
+    # (a missing test-account filter can be invisible on today's data).
+    # Advisory findings only explain a failure the result check already catches.
+    blocking: bool = True
+
+
+_DATEISH = re.compile(r"\d{4}(-\d{2}(-\d{2})?)?([ T].*)?")
 
 
 def _literals(tree: exp.Expression) -> set[str]:
-    """String literals used in WHERE comparisons (=, IN)."""
+    """String literals compared directly against a column with = or IN.
+
+    Only direct operands count: a literal inside a function call (a strftime
+    format, an INTERVAL '1 month') is not a filter value. Dates are checked by
+    the result comparison instead.
+    """
     out = set()
-    for node in tree.find_all(exp.EQ, exp.In):
-        for lit in node.find_all(exp.Literal):
-            if lit.is_string and not re.fullmatch(r"\d{4}-\d{2}-\d{2}.*", lit.this):
-                out.add(lit.this)  # dates are checked by the result comparison instead
+    for node in tree.find_all(exp.EQ, exp.NEQ, exp.In):
+        if isinstance(node, exp.In):
+            if not isinstance(node.this, exp.Column):
+                continue
+            operands = node.expressions
+        else:
+            if not (isinstance(node.left, exp.Column) or isinstance(node.right, exp.Column)):
+                continue
+            operands = [node.left, node.right]
+        for lit in operands:
+            if isinstance(lit, exp.Literal) and lit.is_string and not _DATEISH.fullmatch(lit.this):
+                out.add(lit.this)
     return out
 
 
@@ -114,9 +134,12 @@ def check(question: str, sql: str | None, model: dict, truncated: bool = False) 
     q = question.lower()
     mentions_time = bool(re.search(r"\b20\d\d\b|\bq[1-4]\b", q)) or \
         any(re.search(rf"\b{m}\b", q) for m in _MONTHS) or any(r in q for r in _RELATIVE)
-    if mentions_time and not re.search(r"date\s*'|\d{4}-\d{2}-\d{2}|current_date|date_trunc", low):
+    time_filter = re.search(r"date\s*'|'\d{4}(-\d{2})?(-\d{2})?'|current_date|date_trunc|"
+                            r"\b(year|quarter|month|extract|date_part|strftime)\s*\(", low)
+    if mentions_time and not time_filter:
         findings.append(Finding("missing_time_filter",
-                                "question names a period but SQL has no date filter", "prompt"))
+                                "question names a period but SQL has no date filter", "prompt",
+                                blocking=False))
 
     # 7. Results cut off at the row cap without telling the user.
     if truncated:

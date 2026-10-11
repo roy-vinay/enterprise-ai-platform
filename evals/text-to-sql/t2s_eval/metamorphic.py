@@ -74,10 +74,14 @@ def check_relation(rel: dict, bot: Bot, wh: Warehouse, run: int = 0) -> Relation
     if t in ("equivalent", "monotonic"):
         outs = [ask(q) for q in rel["questions"]]
         actions = {a for a, _ in outs}
+        if "error" in actions:
+            # A bot that errors on every phrasing is not "consistent"; it was never tested.
+            return mk("inconclusive", "bot errored on at least one phrasing")
         if t == "equivalent":
             if len(actions) > 1:
                 return mk("violated", f"mixed behavior across phrasings: {sorted(actions)}")
             if actions != {"answer"}:
+                # Every phrasing got the same deliberate clarify or refuse.
                 return mk("holds", f"consistently {actions.pop()}")
             first = outs[0][1]
             mode = "scalar" if first is not None and len(first) == 1 else "set"
@@ -101,6 +105,8 @@ def check_relation(rel: dict, bot: Bot, wh: Warehouse, run: int = 0) -> Relation
 
     if t == "partition_sum":
         (ta, total), (pa, parts) = ask(rel["total"]), ask(rel["parts"])
+        if "error" in (ta, pa):
+            return mk("inconclusive", "bot errored")
         if ta != "answer" or pa != "answer":
             return mk("inconclusive", "bot did not answer both questions")
         tv, pv = scalar(total), _sum_last_numeric(parts or [])
@@ -112,6 +118,8 @@ def check_relation(rel: dict, bot: Bot, wh: Warehouse, run: int = 0) -> Relation
 
     if t == "subset_bound":
         (sa, sub), (pa, sup) = ask(rel["subset"]), ask(rel["superset"])
+        if "error" in (sa, pa):
+            return mk("inconclusive", "bot errored")
         if sa != "answer" or pa != "answer":
             return mk("inconclusive", "bot did not answer both questions")
         sv, pv = scalar(sub), scalar(sup)
@@ -126,5 +134,7 @@ def check_relation(rel: dict, bot: Bot, wh: Warehouse, run: int = 0) -> Relation
 
 def run_all(relations: list[dict], cases: list[dict], bot: Bot, wh: Warehouse,
             include_generated: bool = True) -> list[RelationResult]:
+    if hasattr(bot, "phase"):
+        bot.phase = "relations"
     rels = list(relations) + (generated_relations(cases) if include_generated else [])
     return [check_relation(r, bot, wh) for r in rels]

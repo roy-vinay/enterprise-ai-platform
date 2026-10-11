@@ -44,7 +44,7 @@ def cmd_build_data(_):
 def cmd_run(a):
     model = semantic.load(a.semantic_model)
     cases, relations = config.load_cases(), config.load_relations()
-    wh = Warehouse(str(config.ensure_warehouse()), model.get("row_cap", 100))
+    wh = Warehouse(str(config.ensure_warehouse()), model.get("row_cap", 100), str(model["as_of"]))
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     llm_judge = judge.LLMJudge(a.model) if a.llm_judge else None
@@ -149,7 +149,7 @@ def cmd_gate(a):
     """
     model = semantic.load(a.semantic_model)
     cases, relations = config.load_cases(), config.load_relations()
-    wh = Warehouse(str(config.ensure_warehouse()), model.get("row_cap", 100))
+    wh = Warehouse(str(config.ensure_warehouse()), model.get("row_cap", 100), str(model["as_of"]))
     bot = SimulatedBot(model, cases, "perfect")
     results = {r.case_id: r for r in grade_suite(cases, bot, wh, model, n_runs=1)}
     rels = {r.id: r for r in metamorphic.run_all(relations, cases, bot, wh)}
