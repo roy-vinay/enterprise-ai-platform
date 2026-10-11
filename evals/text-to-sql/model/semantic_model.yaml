@@ -1,0 +1,173 @@
+# Semantic model for the synthetic B2B SaaS warehouse.
+#
+# This is what the BI bot is told about the business. It plays the same role
+# as a warehouse semantic view, a dbt semantic layer, or a LookML model.
+# The eval treats it as code: every change to this file is re-tested, and the
+# mutation tester deliberately breaks it to see whether the eval notices.
+
+name: saas_warehouse
+as_of: "2026-10-01"          # the bot's "today"; "last month" means September 2026
+timezone: UTC
+row_cap: 100                 # the bot returns at most this many rows
+
+global_filters:
+  # Applied to every metric whose table has an account_id column.
+  exclude_test_accounts: "account_id NOT IN (SELECT account_id FROM accounts WHERE is_test)"
+
+metrics:
+  mrr:
+    description: Monthly recurring revenue, month-end snapshot. Sum one month only, never across months.
+    synonyms: [monthly recurring revenue, recurring revenue]
+    table: mrr_monthly
+    agg: SUM
+    column: mrr_usd
+    filters: []
+    time_column: month
+    alt_time_columns: []
+
+  arr:
+    description: Annual recurring revenue, MRR of a single month times 12.
+    synonyms: [annual recurring revenue, run rate]
+    table: mrr_monthly
+    agg: SUM
+    column: mrr_usd * 12
+    filters: []
+    time_column: month
+    alt_time_columns: []
+
+  revenue:
+    description: Collected revenue, paid invoices only, excluding soft-deleted invoices.
+    synonyms: [collected revenue, paid revenue, sales]
+    table: invoices
+    agg: SUM
+    column: amount_usd
+    filters: ["status = 'paid'", "is_deleted = FALSE"]
+    time_column: invoice_date
+    alt_time_columns: []
+
+  churned_accounts:
+    description: Accounts whose subscription the customer canceled (voluntary churn), dated by end_date.
+    synonyms: [churn, churned customers, lost customers, voluntary churn, cancellations]
+    table: subscriptions
+    agg: COUNT DISTINCT
+    column: account_id
+    filters: ["status = 'canceled'", "canceled_by = 'customer'"]
+    time_column: end_date
+    alt_time_columns: [start_date]
+
+  involuntary_churned_accounts:
+    description: Accounts canceled by the system for nonpayment, dated by end_date.
+    synonyms: [involuntary churn, nonpayment cancellations, failed payment churn]
+    table: subscriptions
+    agg: COUNT DISTINCT
+    column: account_id
+    filters: ["status = 'canceled'", "canceled_by = 'system_nonpayment'"]
+    time_column: end_date
+    alt_time_columns: [start_date]
+
+  new_accounts:
+    description: Accounts created in the period.
+    synonyms: [new customers, signups, new logos]
+    table: accounts
+    agg: COUNT DISTINCT
+    column: account_id
+    filters: ["is_test = FALSE"]
+    time_column: created_at
+    alt_time_columns: []
+
+  paying_accounts:
+    description: Accounts with MRR above zero in a given month.
+    synonyms: [active accounts, paying customers, customer count]
+    table: mrr_monthly
+    agg: COUNT DISTINCT
+    column: account_id
+    filters: ["mrr_usd > 0"]
+    time_column: month
+    alt_time_columns: []
+
+  api_calls:
+    description: Total API calls.
+    synonyms: [api usage, api volume]
+    table: usage_monthly
+    agg: SUM
+    column: api_calls
+    filters: []
+    time_column: month
+    alt_time_columns: []
+
+  monthly_active_users:
+    description: Sum of active users across accounts for a single month.
+    synonyms: [mau, active users]
+    table: usage_monthly
+    agg: SUM
+    column: active_users
+    filters: []
+    time_column: month
+    alt_time_columns: []
+
+  support_tickets:
+    description: Number of support tickets opened.
+    synonyms: [tickets, support volume, cases]
+    table: support_tickets
+    agg: COUNT
+    column: "*"
+    filters: []
+    time_column: created_at
+    alt_time_columns: []
+
+  avg_csat:
+    description: Average CSAT (1 to 5) over tickets that have a score.
+    synonyms: [csat, customer satisfaction, satisfaction score]
+    table: support_tickets
+    agg: AVG
+    column: csat_score
+    filters: ["csat_score IS NOT NULL"]
+    time_column: created_at
+    alt_time_columns: []
+
+  refunded_invoices:
+    description: Number of refunded invoices, excluding soft-deleted ones.
+    synonyms: [refunds]
+    table: invoices
+    agg: COUNT
+    column: "*"
+    filters: ["status = 'refunded'", "is_deleted = FALSE"]
+    time_column: invoice_date
+    alt_time_columns: []
+
+dimensions:
+  segment:
+    source: accounts.segment
+    join: account_id
+    values: [SMB, MidMarket, Enterprise]
+    synonyms: {Enterprise: [enterprise, large customers], SMB: [smb, small business], MidMarket: [mid-market, midmarket, mid market]}
+  region:
+    source: accounts.region
+    join: account_id
+    values: [NA, EMEA, APAC, LATAM]
+    synonyms: {NA: [north america, us], EMEA: [europe, emea], APAC: [asia, apac], LATAM: [latin america, latam]}
+  industry:
+    source: accounts.industry
+    join: account_id
+    values: [fintech, healthcare, retail, manufacturing, media, education]
+  plan:
+    source: subscriptions.plan
+    join: account_id
+    values: [Starter, Growth, Scale]
+  cancel_reason:
+    source: subscriptions.cancel_reason
+    join: account_id
+    values: [price, missing_feature, switched_competitor, budget_cut, company_closed, other]
+    synonyms: {switched_competitor: [competitor, competitors], price: [pricing, too expensive], missing_feature: [missing feature, missing features], budget_cut: [budget, budget cuts]}
+  priority:
+    source: support_tickets.priority
+    join: null
+    values: [low, normal, high, urgent]
+
+not_in_warehouse:
+  # Things people ask for that this data cannot answer. A correct bot refuses.
+  - NPS or survey scores
+  - costs, COGS, gross margin, profit
+  - sales reps, pipeline, opportunities, quota
+  - marketing spend, CAC, campaigns
+  - forecasts or predictions

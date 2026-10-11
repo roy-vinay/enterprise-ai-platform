@@ -1,0 +1,84 @@
+# Metamorphic relations: tests that need no answer key.
+#
+# Writing reference SQL is the expensive part of any eval. A metamorphic test
+# instead checks that the bot's answers are consistent with each other. If two
+# questions mean the same thing, the numbers must match. If one question is a
+# subset of another, its number cannot be bigger. None of these relations
+# needs to know the right answer, so they scale cheaply.
+#
+# Relation types
+#   equivalent      every question must return the same result
+#   partition_sum   the parts must add up to the total
+#   subset_bound    the subset result must be <= the superset result
+#   monotonic       results must not decrease from one question to the next
+#
+# On top of these hand-written relations, the runner also generates surface
+# paraphrases of every answerable trap-set case ("Quick question: ...",
+# "... please") and checks them for equivalence with the original.
+
+relations:
+- id: m01
+  type: equivalent
+  why: three phrasings of the same metric and month
+  questions:
+    - What was MRR in September 2026?
+    - What was monthly recurring revenue for Sep 2026?
+    - Sept 2026 MRR
+
+- id: m02
+  type: equivalent
+  why: relative and absolute dates must agree (today is 2026-10-01)
+  questions:
+    - What was MRR last month?
+    - What was MRR in September 2026?
+
+- id: m03
+  type: equivalent
+  why: relative and absolute year-to-date must agree
+  questions:
+    - What's our year-to-date revenue?
+    - How much revenue did we collect from January through September 2026?
+
+- id: m04
+  type: partition_sum
+  why: regional revenue must add up to total revenue
+  total: How much revenue did we collect in Q3 2026?
+  parts: Revenue by region in Q3 2026
+
+- id: m05
+  type: partition_sum
+  why: tickets by segment must add up to all tickets
+  total: How many support tickets were opened in 2025?
+  parts: How many support tickets did each segment open in 2025?
+
+- id: m06
+  type: partition_sum
+  why: MRR by plan must add up to total MRR
+  total: What was MRR in September 2026?
+  parts: What was MRR by plan in September 2026?
+
+- id: m07
+  type: subset_bound
+  why: Enterprise churn is a subset of all churn
+  subset: How many Enterprise customers churned in 2026?
+  superset: How many customers churned in 2026?
+
+- id: m08
+  type: subset_bound
+  why: voluntary churn is a subset of all cancellations
+  subset: How many customers churned in Q3 2026?
+  superset: How many customers canceled in Q3 2026, including nonpayment?
+
+- id: m09
+  type: monotonic
+  why: cumulative revenue cannot shrink as the window grows
+  questions:
+    - How much revenue did we collect from January through June 2026?
+    - How much revenue did we collect from January through September 2026?
+
+- id: m10
+  type: equivalent
+  why: synonyms from the semantic model must resolve to the same metric
+  questions:
+    - How many customers churned in Q3 2026?
+    - How many lost customers did we have in Q3 2026?

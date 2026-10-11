@@ -1,0 +1,4 @@
+data/
+reports/latest/
+__pycache__/
+.pytest_cache/

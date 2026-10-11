@@ -1,0 +1,183 @@
+# Oracle for the simulated bot. NOT part of the benchmark.
+#
+# The simulated bot lets the whole pipeline run in CI with no model and no
+# API key. For each question it knows a "correct" query written against the
+# semantic model (placeholders like {{agg:mrr}} are filled from whatever model
+# is loaded, so mutating the model changes the bot's SQL, exactly like a real
+# bot). It then injects realistic failures according to its profile.
+#
+# Reference SQL in the trap set is written independently by hand; this file
+# never reads it.
+#
+# Fields: action, sql, relative (date-dependent wording), ambiguous,
+#         case (trap-set id whose tempting_sql is this bot's favorite mistake)
+
+questions:
+  what was mrr in september 2026: &mrr_sep
+    action: answer
+    interpretation: MRR snapshot for September 2026
+    sql: "SELECT {{agg:mrr}} FROM mrr_monthly WHERE {{where:mrr}} AND {{time:mrr}} = DATE '2026-09-01'"
+  what was monthly recurring revenue for sep 2026: *mrr_sep
+  sept 2026 mrr: *mrr_sep
+  what was mrr last month:
+    <<: *mrr_sep
+    relative: true
+
+  what is our current arr:
+    action: answer
+    interpretation: ARR from the latest complete month (September 2026)
+    sql: "SELECT {{agg:arr}} FROM mrr_monthly WHERE {{where:arr}} AND {{time:arr}} = DATE '2026-09-01'"
+    relative: true
+    case: c03
+
+  how much revenue did we collect in q3 2026:
+    action: answer
+    interpretation: paid invoice revenue, July to September 2026
+    sql: "SELECT {{agg:revenue}} FROM invoices WHERE {{where:revenue}} AND {{time:revenue}} >= DATE '2026-07-01' AND {{time:revenue}} < DATE '2026-10-01'"
+    case: c04
+
+  what's our year-to-date revenue: &rev_ytd
+    action: answer
+    interpretation: paid invoice revenue, January through September 2026
+    sql: "SELECT {{agg:revenue}} FROM invoices WHERE {{where:revenue}} AND {{time:revenue}} >= DATE '2026-01-01' AND {{time:revenue}} < DATE '2026-10-01'"
+    relative: true
+  how much revenue did we collect from january through september 2026:
+    <<: *rev_ytd
+    relative: false
+  how much revenue did we collect from january through june 2026:
+    action: answer
+    interpretation: paid invoice revenue, January through June 2026
+    sql: "SELECT {{agg:revenue}} FROM invoices WHERE {{where:revenue}} AND {{time:revenue}} >= DATE '2026-01-01' AND {{time:revenue}} < DATE '2026-07-01'"
+
+  how many new customers did we sign in q2 2026:
+    action: answer
+    interpretation: new non-test accounts created April to June 2026
+    sql: "SELECT {{agg:new_accounts}} FROM accounts WHERE {{where:new_accounts}} AND {{time:new_accounts}} >= DATE '2026-04-01' AND {{time:new_accounts}} < DATE '2026-07-01'"
+    case: c11
+
+  how many paying accounts did we have in september 2026:
+    action: answer
+    interpretation: accounts with MRR above zero in September 2026
+    sql: "SELECT {{agg:paying_accounts}} FROM mrr_monthly WHERE {{where:paying_accounts}} AND {{time:paying_accounts}} = DATE '2026-09-01'"
+
+  how many active accounts do we have:
+    action: answer
+    interpretation: paying accounts in the latest month (September 2026)
+    sql: "SELECT {{agg:paying_accounts}} FROM mrr_monthly WHERE {{where:paying_accounts}} AND {{time:paying_accounts}} = DATE '2026-09-01'"
+    relative: true
+    ambiguous: true
+    case: c13
+
+  how many invoices were refunded in 2025:
+    action: answer
+    interpretation: refunded invoices in 2025
+    sql: "SELECT {{agg:refunded_invoices}} FROM invoices WHERE {{where:refunded_invoices}} AND {{time:refunded_invoices}} >= DATE '2025-01-01' AND {{time:refunded_invoices}} < DATE '2026-01-01'"
+
+  how many api calls did emea accounts make in q2 2026:
+    action: answer
+    interpretation: API calls from EMEA accounts, April to June 2026
+    sql: "SELECT {{agg:api_calls}} FROM (SELECT u.*, a.region FROM usage_monthly u JOIN accounts a USING (account_id)) WHERE {{where:api_calls}} AND region = 'EMEA' AND {{time:api_calls}} >= DATE '2026-04-01' AND {{time:api_calls}} < DATE '2026-07-01'"
+
+  revenue by region in september 2026:
+    action: answer
+    interpretation: paid invoice revenue by region, September 2026
+    sql: "SELECT region, {{agg:revenue}} FROM (SELECT i.*, a.region FROM invoices i JOIN accounts a USING (account_id)) WHERE {{where:revenue}} AND {{time:revenue}} >= DATE '2026-09-01' AND {{time:revenue}} < DATE '2026-10-01' GROUP BY region"
+  revenue by region in q3 2026:
+    action: answer
+    interpretation: paid invoice revenue by region, July to September 2026
+    sql: "SELECT region, {{agg:revenue}} FROM (SELECT i.*, a.region FROM invoices i JOIN accounts a USING (account_id)) WHERE {{where:revenue}} AND {{time:revenue}} >= DATE '2026-07-01' AND {{time:revenue}} < DATE '2026-10-01' GROUP BY region"
+
+  what was mrr by plan in september 2026:
+    action: answer
+    interpretation: MRR by plan, September 2026
+    sql: "SELECT plan, {{agg:mrr}} FROM mrr_monthly WHERE {{where:mrr}} AND {{time:mrr}} = DATE '2026-09-01' GROUP BY plan"
+
+  how many support tickets did each segment open in 2025:
+    action: answer
+    interpretation: support tickets by segment, 2025
+    sql: "SELECT segment, {{agg:support_tickets}} FROM (SELECT t.*, a.segment FROM support_tickets t JOIN accounts a USING (account_id)) WHERE {{where:support_tickets}} AND {{time:support_tickets}} >= DATE '2025-01-01' AND {{time:support_tickets}} < DATE '2026-01-01' GROUP BY segment"
+  how many support tickets were opened in 2025:
+    action: answer
+    interpretation: support tickets opened in 2025
+    sql: "SELECT {{agg:support_tickets}} FROM support_tickets WHERE {{where:support_tickets}} AND {{time:support_tickets}} >= DATE '2025-01-01' AND {{time:support_tickets}} < DATE '2026-01-01'"
+
+  top 5 accounts by revenue in 2025:
+    action: answer
+    interpretation: top five accounts by paid revenue, 2025
+    sql: "SELECT name, {{agg:revenue}} AS revenue FROM (SELECT i.*, a.name FROM invoices i JOIN accounts a USING (account_id)) WHERE {{where:revenue}} AND {{time:revenue}} >= DATE '2025-01-01' AND {{time:revenue}} < DATE '2026-01-01' GROUP BY name ORDER BY revenue DESC LIMIT 5"
+
+  what was average csat for urgent tickets in q3 2026:
+    action: answer
+    interpretation: average CSAT over scored urgent tickets, July to September 2026
+    sql: "SELECT {{agg:avg_csat}} FROM support_tickets WHERE {{where:avg_csat}} AND priority = 'urgent' AND {{time:avg_csat}} >= DATE '2026-07-01' AND {{time:avg_csat}} < DATE '2026-10-01'"
+    case: c15
+
+  what was month-over-month mrr growth in september 2026, as a percent:
+    action: answer
+    interpretation: percent change in MRR from August to September 2026
+    sql: "WITH m AS (SELECT {{time:mrr}} AS mo, {{agg:mrr}} AS v FROM mrr_monthly WHERE {{where:mrr}} AND {{time:mrr}} IN (DATE '2026-08-01', DATE '2026-09-01') GROUP BY 1) SELECT (MAX(v) FILTER (WHERE mo = DATE '2026-09-01') / MAX(v) FILTER (WHERE mo = DATE '2026-08-01') - 1) * 100 FROM m"
+
+  how many customers churned in q3 2026: &churn_q3
+    action: answer
+    interpretation: customer-initiated cancellations, July to September 2026
+    sql: "SELECT {{agg:churned_accounts}} FROM subscriptions WHERE {{where:churned_accounts}} AND {{time:churned_accounts}} >= DATE '2026-07-01' AND {{time:churned_accounts}} < DATE '2026-10-01'"
+    case: c08
+  how many lost customers did we have in q3 2026: *churn_q3
+
+  how many customers churned in 2026:
+    action: answer
+    interpretation: customer-initiated cancellations in 2026
+    sql: "SELECT {{agg:churned_accounts}} FROM subscriptions WHERE {{where:churned_accounts}} AND {{time:churned_accounts}} >= DATE '2026-01-01' AND {{time:churned_accounts}} < DATE '2027-01-01'"
+  how many enterprise customers churned in 2026:
+    action: answer
+    interpretation: customer-initiated cancellations by Enterprise accounts in 2026
+    sql: "SELECT {{agg:churned_accounts}} FROM (SELECT s.*, a.segment FROM subscriptions s JOIN accounts a USING (account_id)) WHERE {{where:churned_accounts}} AND segment = 'Enterprise' AND {{time:churned_accounts}} >= DATE '2026-01-01' AND {{time:churned_accounts}} < DATE '2027-01-01'"
+
+  how many customers canceled in q3 2026, including nonpayment:
+    action: answer
+    interpretation: all cancellations (customer and nonpayment), July to September 2026
+    sql: "SELECT COUNT(DISTINCT account_id) FROM subscriptions WHERE status = 'canceled' AND {{global:all}} AND {{time:churned_accounts}} >= DATE '2026-07-01' AND {{time:churned_accounts}} < DATE '2026-10-01'"
+    case: c28
+
+  how many accounts were canceled for nonpayment in 2025:
+    action: answer
+    interpretation: nonpayment cancellations in 2025
+    sql: "SELECT {{agg:involuntary_churned_accounts}} FROM subscriptions WHERE {{where:involuntary_churned_accounts}} AND {{time:involuntary_churned_accounts}} >= DATE '2025-01-01' AND {{time:involuntary_churned_accounts}} < DATE '2026-01-01'"
+
+  how many customers did we lose to competitors in 2026:
+    action: answer
+    interpretation: customer cancellations with reason switched_competitor, 2026
+    sql: "SELECT {{agg:churned_accounts}} FROM subscriptions WHERE {{where:churned_accounts}} AND cancel_reason = 'switched_competitor' AND {{time:churned_accounts}} >= DATE '2026-01-01' AND {{time:churned_accounts}} < DATE '2027-01-01'"
+
+  what was total mrr in 2025:
+    action: clarify
+    interpretation: MRR is a monthly snapshot; asking which month (December 2025?)
+    case: c20
+  how many customers canceled because of bugs in 2026:
+    action: clarify
+    interpretation: no "bugs" cancel reason exists; asking which reason was meant
+    case: c25
+  what's our churn rate:
+    action: clarify
+    interpretation: churn rate is not defined; asking logo vs revenue and period
+    case: c27
+  how are we doing this quarter:
+    action: clarify
+    interpretation: no metric named; asking which metric
+    case: c26
+  what's our nps by segment:
+    action: refuse
+    interpretation: no NPS data in the warehouse
+    case: c21
+  what was gross margin in q3 2026:
+    action: refuse
+    interpretation: no cost data in the warehouse
+    case: c22
+  which sales rep closed the most revenue in q3 2026:
+    action: refuse
+    interpretation: no sales rep data in the warehouse
+    case: c23
+  what will mrr be in december 2026:
+    action: refuse
+    interpretation: forecasts are out of scope
+    case: c24

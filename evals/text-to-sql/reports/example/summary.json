@@ -1,0 +1,51 @@
+{
+  "simulated-overconfident": {
+    "cases": 28,
+    "pass_rate": 0.6071428571428571,
+    "accuracy_on_answerable": 0.75,
+    "correct_abstention_rate": 0.25,
+    "answered": 26,
+    "wrong_answers": 11,
+    "confident_wrong_rate": 0.15384615384615385,
+    "substitution_rate": 0.0,
+    "unstable_cases": 11,
+    "failures_by_owner": {
+      "prompt": 11
+    },
+    "failures_by_check": {
+      "result": 3,
+      "sql_rule": 3,
+      "behavior": 5
+    },
+    "best_threshold": 1.0,
+    "metamorphic_violations": 7
+  },
+  "simulated-careful": {
+    "cases": 28,
+    "pass_rate": 0.9285714285714286,
+    "accuracy_on_answerable": 0.9,
+    "correct_abstention_rate": 1.0,
+    "answered": 19,
+    "wrong_answers": 2,
+    "confident_wrong_rate": 0.0,
+    "substitution_rate": 0.0,
+    "unstable_cases": 2,
+    "failures_by_owner": {
+      "prompt": 2
+    },
+    "failures_by_check": {
+      "sql_rule": 1,
+      "result": 1
+    },
+    "best_threshold": 1.0,
+    "metamorphic_violations": 2
+  },
+  "mutation": {
+    "mutants": 24,
+    "killed": 13,
+    "blind_spots": [
+      "involuntary_churned_accounts.time_column.start_date",
+      "monthly_active_users.change_agg"
+    ]
+  }
+}
