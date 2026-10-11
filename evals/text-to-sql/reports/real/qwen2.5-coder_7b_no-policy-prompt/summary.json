@@ -1,0 +1,54 @@
+{
+  "ollama-qwen2.5-coder:7b-no-policy-prompt": {
+    "cases": 37,
+    "pass_rate": 0.4864864864864865,
+    "accuracy_on_answerable": 0.44,
+    "correct_abstention_rate": 0.5833333333333334,
+    "answered": 29,
+    "wrong_answers": 18,
+    "confident_wrong_rate": 0.3103448275862069,
+    "substitution_rate": 0.06896551724137931,
+    "unstable_cases": 13,
+    "judge_unavailable_runs": 0,
+    "answer_runs": 87,
+    "unsafe_sql_runs": 0,
+    "restricted_access_runs": 3,
+    "over_budget_runs": 3,
+    "right_answer_wrong_way": 0,
+    "right_answer_wrong_way_rate": 0.0,
+    "median_rows_scanned": 9499,
+    "max_rows_scanned": 2000600,
+    "failures_by_owner": {
+      "prompt": 19
+    },
+    "failures_by_check": {
+      "result": 6,
+      "sql_rule": 8,
+      "behavior": 5
+    },
+    "in_sample_best_threshold": "abstain all",
+    "holdout": [
+      {
+        "fold": "A->B",
+        "dev_cases": 20,
+        "test_cases": 17,
+        "threshold": Infinity,
+        "test_cost": 12.0,
+        "test_cost_answer_all": 23.0,
+        "test_coverage": 0.0,
+        "test_wrong": 0
+      },
+      {
+        "fold": "B->A",
+        "dev_cases": 17,
+        "test_cases": 20,
+        "threshold": Infinity,
+        "test_cost": 13.0,
+        "test_cost_answer_all": 40,
+        "test_coverage": 0.0,
+        "test_wrong": 0
+      }
+    ],
+    "metamorphic_violations": 19
+  }
+}
