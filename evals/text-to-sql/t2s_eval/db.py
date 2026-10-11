@@ -108,10 +108,14 @@ def compare(expected: list[tuple], actual: list[tuple] | None, mode: str, tol: f
     raise ValueError(f"unknown compare mode {mode}")
 
 
-def fingerprint(rows: list[tuple] | None) -> str:
-    """Stable signature of a result, for agreement across runs."""
+def fingerprint(rows: list[tuple] | None, ordered: bool = False) -> str:
+    """Stable signature of a result, for agreement across runs.
+
+    Row order is ignored unless `ordered` is set; rankings must keep it, or a
+    correctly ordered and a wrongly ordered top-N would look identical.
+    """
     if rows is None:
         return "<error>"
-    norm = sorted((tuple(round(_num(v), 4) if _num(v) is not None else str(v).lower()
-                         for v in r) for r in rows), key=str)
-    return repr(norm)
+    norm = [tuple(round(_num(v), 4) if _num(v) is not None else str(v).lower() for v in r)
+            for r in rows]
+    return repr(norm if ordered else sorted(norm, key=str))

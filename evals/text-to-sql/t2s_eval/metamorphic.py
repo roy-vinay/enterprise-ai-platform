@@ -21,6 +21,7 @@ class RelationResult:
     status: str            # holds | violated | inconclusive
     detail: str
     generated: bool = False
+    assumes: str = ""      # what must be true of the data for the relation to hold
 
     def to_dict(self):
         return asdict(self)
@@ -61,8 +62,14 @@ def check_relation(rel: dict, bot: Bot, wh: Warehouse, run: int = 0) -> Relation
         return "answer", wh.run(resp.sql).rows
 
     mk = lambda status, detail: RelationResult(rel["id"], rel["type"], rel.get("why", ""),
-                                               status, detail, rel.get("generated", False))
+                                               status, detail, rel.get("generated", False),
+                                               rel.get("assumes", ""))
     t = rel["type"]
+
+    if rel.get("assumes_sql"):
+        chk = wh.run(rel["assumes_sql"])
+        if chk.error or not chk.rows or chk.rows[0][0] is not True:
+            return mk("inconclusive", f"assumption no longer holds: {rel.get('assumes', '')}")
 
     if t in ("equivalent", "monotonic"):
         outs = [ask(q) for q in rel["questions"]]

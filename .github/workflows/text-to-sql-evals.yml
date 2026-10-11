@@ -49,6 +49,8 @@ jobs:
           path: evals/text-to-sql/reports/latest
 
   ollama:
+    permissions:
+      contents: write   # to commit results back to the ollama-run branch
     if: (github.event_name == 'workflow_dispatch' && inputs.ollama_model != '') || startsWith(github.ref_name, 'ollama-run/')
     runs-on: ubuntu-latest
     strategy:
@@ -70,9 +72,28 @@ jobs:
           ollama pull "${{ matrix.model }}"
       - run: python -m t2s_eval.cli build-data
       - name: Evaluate a real model
-        run: python -m t2s_eval.cli run --bot ollama --model "${{ matrix.model }}" --runs 3 --skip-mutation --out reports/ollama
+        id: eval
+        run: |
+          SAFE=$(echo "${{ matrix.model }}" | tr ':/' '__')
+          echo "out=reports/real/$SAFE" >> "$GITHUB_OUTPUT"
+          python -m t2s_eval.cli run --bot ollama --model "${{ matrix.model }}" --runs 3 \
+            --skip-mutation --out "reports/real/$SAFE"
       - uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: text-to-sql-report-ollama-${{ strategy.job-index }}
-          path: evals/text-to-sql/reports/ollama
+          path: evals/text-to-sql/${{ steps.eval.outputs.out }}
+      - name: Commit results to the run branch
+        # Only on ollama-run/* branches, never on main or a PR branch.
+        if: always() && startsWith(github.ref_name, 'ollama-run/') && steps.eval.outputs.out != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f "${{ steps.eval.outputs.out }}"
+          git commit -m "Real-model results: ${{ matrix.model }}" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase -q origin "${{ github.ref_name }}" && git push -q origin HEAD:"${{ github.ref_name }}" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

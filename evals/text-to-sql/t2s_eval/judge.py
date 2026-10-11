@@ -6,7 +6,9 @@ Most eval repos trust their judge blindly. Here the judge is itself evaluated:
   into each answer, so we can measure, per fault type, how often the grader
   catches it (recall) and how often it fails a clean answer (false alarms).
 * Against human labels. For a real bot, label a sample of runs by hand
-  (trap_set/human_labels.csv) and measure agreement and Cohen's kappa.
+  (trap_set/human_labels.csv) and measure agreement and Cohen's kappa. This is
+  a capability: no independently reviewed label set is published yet, so the
+  grader is not claimed to be validated against humans.
 
 An optional LLM judge (local, via Ollama) checks the one thing rules cannot:
 whether the bot's interpretation actually matches the question asked.
@@ -99,6 +101,11 @@ metric, filter value, entity or time window? Respond with JSON only:
                                      headers={"Content-Type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=120) as r:
-                return json.loads(json.loads(r.read())["message"]["content"])
+                out = json.loads(json.loads(r.read())["message"]["content"])
         except Exception as e:
-            return {"answers_question": True, "substitution": False, "reason": f"judge error: {e}"}
+            # Never return a favorable default: the grader fails the run as judge_unavailable.
+            return {"error": f"{type(e).__name__}: {e}"}
+        if not isinstance(out, dict) or not isinstance(out.get("answers_question"), bool) \
+                or not isinstance(out.get("substitution"), bool):
+            return {"error": f"malformed verdict: {str(out)[:120]}"}
+        return out

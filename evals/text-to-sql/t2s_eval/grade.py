@@ -23,7 +23,7 @@ class RunResult:
     owner: str | None             # semantic_model | prompt | app
     findings: list[dict] = field(default_factory=list)
     injected: list[str] = field(default_factory=list)
-    signature: str = ""           # (action, result) fingerprint for agreement
+    signature: str = ""           # what the user would see: action + result (order kept when it matters)
 
 
 @dataclass
@@ -33,9 +33,10 @@ class CaseResult:
     category: str
     expected_behavior: str
     cost_weight: int
-    passed: bool                  # majority-vote outcome
-    answered: bool                # majority action was an answer
-    confidence: float             # share of runs that agree with the majority
+    passed: bool                  # majority vote over runs; a tie counts as a fail
+    answered: bool                # the representative run answered
+    agreement: float              # share of runs giving the most common user-visible answer.
+                                  # A coarse consistency signal, not a calibrated probability.
     failed_check: str | None
     reason: str
     owner: str | None
@@ -65,7 +66,7 @@ def grade_response(case: dict, resp: BotResponse, wh: Warehouse, model: dict,
 
     # The bot answered.
     qr = wh.run(resp.sql)
-    sig = "answer:" + fingerprint(qr.rows)
+    sig = "answer:" + fingerprint(qr.rows, ordered=case.get("compare") == "top_n_ordered")
     findings = rules.check(case["question"], resp.sql, model, truncated=qr.truncated)
     fdicts = [asdict(f) for f in findings]
 
@@ -78,6 +79,10 @@ def grade_response(case: dict, resp: BotResponse, wh: Warehouse, model: dict,
                          findings=fdicts, signature=sig, reason=f"SQL error: {qr.error}")
     if judge is not None:
         verdict = judge(case["question"], resp.interpretation, resp.sql or "")
+        if verdict.get("error"):
+            # Fail closed: an unavailable judge must never read as a clean verdict.
+            return RunResult(**base, passed=False, failed_check="judge_unavailable", owner="app",
+                             findings=fdicts, signature=sig, reason=f"judge: {verdict['error']}")
         if verdict.get("substitution") or not verdict.get("answers_question", True):
             return RunResult(**base, passed=False, failed_check="behavior", owner="prompt",
                              findings=fdicts, signature=sig,
@@ -100,13 +105,28 @@ def grade_case(case: dict, bot: Bot, wh: Warehouse, model: dict, n_runs: int = 3
     runs = [grade_response(case, bot.ask(case["question"], run=r), wh, model, reference,
                            run=r, judge=judge)
             for r in range(n_runs)]
+    return aggregate(case, runs)
+
+
+def aggregate(case: dict, runs: list[RunResult]) -> CaseResult:
+    """Combine repeated runs into one case verdict, independent of run order.
+
+    pass/fail: majority vote over the runs' own verdicts; a tie fails.
+    agreement: share of runs giving the most common user-visible answer.
+    representative: the earliest run that matches both the majority verdict and,
+    if possible, the most common answer, so its reason explains the verdict.
+    """
+    n_pass = sum(r.passed for r in runs)
+    passed = n_pass * 2 > len(runs)
     counts = Counter(r.signature for r in runs)
-    top_sig, top_n = counts.most_common(1)[0]
-    rep = next(r for r in runs if r.signature == top_sig)  # representative of the majority
+    top_n = max(counts.values())
+    top_sigs = {s for s, c in counts.items() if c == top_n}
+    agree = [r for r in runs if r.passed == passed]
+    rep = next((r for r in agree if r.signature in top_sigs), agree[0])
     return CaseResult(case_id=case["id"], question=case["question"], category=case["category"],
                       expected_behavior=case["expected_behavior"],
-                      cost_weight=case.get("cost_weight", 1), passed=rep.passed,
-                      answered=rep.action == "answer", confidence=top_n / n_runs,
+                      cost_weight=case.get("cost_weight", 1), passed=passed,
+                      answered=rep.action == "answer", agreement=top_n / len(runs),
                       failed_check=rep.failed_check, reason=rep.reason, owner=rep.owner, runs=runs)
 
 
@@ -128,7 +148,7 @@ def summarize(results: list[CaseResult]) -> dict:
     abstain = [r for r in results if r.expected_behavior != "answer"]
     answered = [r for r in results if r.answered]
     wrong_answers = [r for r in answered if not r.passed]
-    confident_wrong = [r for r in wrong_answers if r.confidence == 1.0]
+    confident_wrong = [r for r in wrong_answers if r.agreement == 1.0]
     return {
         "cases": n,
         "pass_rate": sum(r.passed for r in results) / n if n else 0.0,
@@ -136,12 +156,14 @@ def summarize(results: list[CaseResult]) -> dict:
         "correct_abstention_rate": (sum(r.passed for r in abstain) / len(abstain)) if abstain else None,
         "answered": len(answered),
         "wrong_answers": len(wrong_answers),
-        # The metric this project argues for: wrong answers delivered with full self-agreement.
+        # The metric this project argues for: wrong answers given identically on every run.
         "confident_wrong_rate": len(confident_wrong) / len(answered) if answered else 0.0,
         "substitution_rate": (sum(any(f["rule"] == "ungrounded_filter_value" for run in r.runs
                                       for f in run.findings) for r in answered) / len(answered))
                              if answered else 0.0,
-        "unstable_cases": sum(r.confidence < 1.0 for r in results),
+        "unstable_cases": sum(r.agreement < 1.0 for r in results),
+        "judge_unavailable_runs": sum(run.failed_check == "judge_unavailable"
+                                      for r in results for run in r.runs),
         "failures_by_owner": dict(Counter(r.owner for r in results if not r.passed)),
         "failures_by_check": dict(Counter(r.failed_check for r in results if not r.passed)),
     }

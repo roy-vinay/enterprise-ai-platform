@@ -12,7 +12,8 @@ def _pct(x):
 
 
 def render(bot_runs: dict[str, dict], primary: str, mutants: list[MutantResult] | None,
-           coverage_rows: list[dict] | None, chart_file: str | None, simulated: bool) -> str:
+           coverage_rows: list[dict] | None, chart_file: str | None, simulated: bool,
+           holdout_info: bool = False) -> str:
     L = ["# Text-to-SQL eval report", ""]
     if simulated:
         L += ["> These numbers come from the **simulated bot**, which injects known faults so the",
@@ -21,21 +22,23 @@ def render(bot_runs: dict[str, dict], primary: str, mutants: list[MutantResult] 
 
     # 1. Headline
     L += ["## Headline", "",
-          "| Bot | Pass rate | Accuracy (answerable) | Correct abstention | Confident-wrong rate | Unstable cases |",
-          "|---|---|---|---|---|---|"]
+          "| Bot | Pass rate | Accuracy (answerable) | Correct abstention | Confident-wrong rate | Unstable cases | Judge unavailable |",
+          "|---|---|---|---|---|---|---|"]
     for name, r in bot_runs.items():
         s = r["summary"]
         L.append(f"| {name} | {_pct(s['pass_rate'])} | {_pct(s['accuracy_on_answerable'])} | "
                  f"{_pct(s['correct_abstention_rate'])} | {_pct(s['confident_wrong_rate'])} | "
-                 f"{s['unstable_cases']} |")
+                 f"{s['unstable_cases']} | {s.get('judge_unavailable_runs', 0)} |")
     L += ["", "*Confident-wrong rate*: share of the bot's answers that were wrong even though every "
-          "repeated run agreed. These are the answers users act on, because nothing looks off.", ""]
+          "repeated run gave the same answer. These are the answers users act on, because nothing "
+          "looks off. *Judge unavailable*: runs where the LLM judge errored; they are counted as "
+          "failures, never as clean passes.", ""]
 
     p = bot_runs[primary]
     results: list[CaseResult] = p["results"]
 
     # 2. Confident wrong answers
-    cw = sorted([r for r in results if r.answered and not r.passed and r.confidence == 1.0],
+    cw = sorted([r for r in results if r.answered and not r.passed and r.agreement == 1.0],
                 key=lambda r: -r.cost_weight)
     L += [f"## Confident wrong answers ({primary})", ""]
     if cw:
@@ -62,11 +65,14 @@ def render(bot_runs: dict[str, dict], primary: str, mutants: list[MutantResult] 
     hand = [x for x in rels if not x.generated]
     L += [f"## Metamorphic checks ({primary})", "",
           f"{len(rels)} relations checked ({len(hand)} hand-written, {len(rels) - len(hand)} generated "
-          f"paraphrase sets), **{len(viol)} violated**. None of these checks uses a reference answer.", ""]
+          f"paraphrase sets), **{len(viol)} violated**. None of these checks uses a reference answer. "
+          "A relation that holds shows consistency, not correctness: answers can be consistently "
+          "wrong.", ""]
     if viol:
         L += ["| Relation | Type | Why it should hold | What broke |", "|---|---|---|---|"]
         for x in viol:
-            L.append(f"| {x.id} | {x.type} | {x.why} | {x.detail} |")
+            why = x.why + (f" (assumes {x.assumes})" if getattr(x, "assumes", "") else "")
+            L.append(f"| {x.id} | {x.type} | {why} | {x.detail} |")
         L.append("")
 
     # 5. Selective answering
@@ -75,13 +81,27 @@ def render(bot_runs: dict[str, dict], primary: str, mutants: list[MutantResult] 
     L += [f"## When should the bot stay quiet? ({primary})", ""]
     if chart_file:
         L += [f"![risk-coverage]({chart_file})", ""]
-    L += ["| Threshold | Coverage | Accuracy of answers | Wrong answers | Expected cost |",
+    L += ["The bot answers only when its runs agree at least this often. Agreement is a coarse "
+          "consistency signal, not a calibrated probability of being right.", "",
+          "| Agreement threshold | Coverage | Accuracy of answers | Wrong answers | Cost |",
           "|---|---|---|---|---|"]
     for pt in sorted(pts, key=lambda x: x.threshold):
-        mark = " **<- lowest cost**" if pt is b else ""
-        L.append(f"| {pt.threshold:.1f} | {_pct(pt.coverage)} | {_pct(pt.accuracy)} | {pt.wrong} | "
-                 f"{pt.cost:.0f}{mark} |")
-    L += ["", "Self-consistency catches unstable answers. It cannot catch a bot that is wrong the same "
+        mark = " (lowest, in-sample)" if pt is b else ""
+        acc = _pct(pt.accuracy) if pt.answered else "n/a"
+        L.append(f"| {pt.label} | {_pct(pt.coverage)} | {acc} | {pt.wrong} | {pt.cost:.0f}{mark} |")
+    if p.get("holdout"):
+        L += ["", "**Held-out check.** The lowest-cost row above is chosen on the same cases it is "
+              "scored on, which flatters it. Below, the threshold is chosen on one half of the "
+              "cases and scored on the other, both ways round. With this few cases, treat it as "
+              "exploratory.", "",
+              "| Fold | Threshold chosen on dev | Test cost | Test cost if it always answered | Test coverage |",
+              "|---|---|---|---|---|"]
+        for h in p["holdout"]:
+            t = "abstain all" if h["threshold"] == float("inf") else f"{h['threshold']:.2f}"
+            L.append(f"| {h['fold']} ({h['dev_cases']}/{h['test_cases']}) | {t} | "
+                     f"{h['test_cost']:.0f} | {h['test_cost_answer_all']:.0f} | "
+                     f"{_pct(h['test_coverage'])} |")
+    L += ["", "Agreement catches unstable answers. It cannot catch a bot that is wrong the same "
           "way every time; those need the trap set and the rule checks.", ""]
 
     # 6. Judge validation
@@ -97,7 +117,7 @@ def render(bot_runs: dict[str, dict], primary: str, mutants: list[MutantResult] 
     if p.get("human"):
         h = p["human"]
         L += [f"Human labels: {h['labeled']} runs, agreement {_pct(h['agreement'])}, "
-              f"Cohen's kappa {h['kappa']:.2f}.", ""]
+              f"Cohen's kappa {h['kappa']:.2f}. These labels have not been independently reviewed.", ""]
 
     # 7. Mutation testing
     if mutants:

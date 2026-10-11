@@ -6,12 +6,12 @@
 
 ## Headline
 
-| Bot | Pass rate | Accuracy (answerable) | Correct abstention | Confident-wrong rate | Unstable cases |
-|---|---|---|---|---|---|
-| simulated-overconfident | 61% | 75% | 25% | 15% | 11 |
-| simulated-careful | 93% | 90% | 100% | 0% | 2 |
+| Bot | Pass rate | Accuracy (answerable) | Correct abstention | Confident-wrong rate | Unstable cases | Judge unavailable |
+|---|---|---|---|---|---|---|
+| simulated-overconfident | 61% | 75% | 25% | 15% | 11 | 0 |
+| simulated-careful | 93% | 90% | 100% | 0% | 2 | 0 |
 
-*Confident-wrong rate*: share of the bot's answers that were wrong even though every repeated run agreed. These are the answers users act on, because nothing looks off.
+*Confident-wrong rate*: share of the bot's answers that were wrong even though every repeated run gave the same answer. These are the answers users act on, because nothing looks off. *Judge unavailable*: runs where the LLM judge errored; they are counted as failures, never as clean passes.
 
 ## Confident wrong answers (simulated-overconfident)
 
@@ -30,7 +30,7 @@
 
 ## Metamorphic checks (simulated-overconfident)
 
-30 relations checked (10 hand-written, 20 generated paraphrase sets), **7 violated**. None of these checks uses a reference answer.
+30 relations checked (10 hand-written, 20 generated paraphrase sets), **7 violated**. None of these checks uses a reference answer. A relation that holds shows consistency, not correctness: answers can be consistently wrong.
 
 | Relation | Type | Why it should hold | What broke |
 |---|---|---|---|
@@ -46,14 +46,24 @@
 
 ![risk-coverage](risk_coverage.png)
 
-| Threshold | Coverage | Accuracy of answers | Wrong answers | Expected cost |
-|---|---|---|---|---|
-| 0.0 | 93% | 58% | 11 | 43 |
-| 0.6 | 93% | 58% | 11 | 43 |
-| 0.8 | 79% | 59% | 9 | 39 |
-| 1.0 | 61% | 76% | 4 | 19 **<- lowest cost** |
+The bot answers only when its runs agree at least this often. Agreement is a coarse consistency signal, not a calibrated probability of being right.
 
-Self-consistency catches unstable answers. It cannot catch a bot that is wrong the same way every time; those need the trap set and the rule checks.
+| Agreement threshold | Coverage | Accuracy of answers | Wrong answers | Cost |
+|---|---|---|---|---|
+| 0.00 | 93% | 58% | 11 | 43 |
+| 0.60 | 93% | 58% | 11 | 43 |
+| 0.80 | 79% | 59% | 9 | 39 |
+| 1.00 | 61% | 76% | 4 | 19 (lowest, in-sample) |
+| abstain all | 0% | n/a | 0 | 20 |
+
+**Held-out check.** The lowest-cost row above is chosen on the same cases it is scored on, which flatters it. Below, the threshold is chosen on one half of the cases and scored on the other, both ways round. With this few cases, treat it as exploratory.
+
+| Fold | Threshold chosen on dev | Test cost | Test cost if it always answered | Test coverage |
+|---|---|---|---|---|
+| A->B (14/14) | abstain all | 10 | 22 | 0% |
+| B->A (14/14) | 1.00 | 11 | 21 | 64% |
+
+Agreement catches unstable answers. It cannot catch a bot that is wrong the same way every time; those need the trap set and the rule checks.
 
 ## How much to trust the grader (simulated-overconfident)
 

@@ -6,6 +6,14 @@
 # subset of another, its number cannot be bigger. None of these relations
 # needs to know the right answer, so they scale cheaply.
 #
+# A relation that holds shows the answers are consistent, not that they are
+# right: a bot can be consistently wrong. And every relation rests on
+# assumptions about the data, recorded in `assumes`. If the data changes so an
+# assumption breaks (negative adjustment rows, overlapping segments), the
+# relation must be revised, not trusted. Where it can be checked in SQL,
+# `assumes_sql` must return TRUE; if it does not, the relation is reported
+# as inconclusive instead of being silently trusted.
+#
 # Relation types
 #   equivalent      every question must return the same result
 #   partition_sum   the parts must add up to the total
@@ -42,36 +50,45 @@ relations:
 - id: m04
   type: partition_sum
   why: regional revenue must add up to total revenue
+  assumes: regions are mutually exclusive and every account has exactly one region
+  assumes_sql: "SELECT COUNT(*) = 0 FROM accounts WHERE region IS NULL"
   total: How much revenue did we collect in Q3 2026?
   parts: Revenue by region in Q3 2026
 
 - id: m05
   type: partition_sum
   why: tickets by segment must add up to all tickets
+  assumes: segments are mutually exclusive and every account has exactly one segment
+  assumes_sql: "SELECT COUNT(*) = 0 FROM accounts WHERE segment IS NULL"
   total: How many support tickets were opened in 2025?
   parts: How many support tickets did each segment open in 2025?
 
 - id: m06
   type: partition_sum
   why: MRR by plan must add up to total MRR
+  assumes: each MRR row carries exactly one plan
   total: What was MRR in September 2026?
   parts: What was MRR by plan in September 2026?
 
 - id: m07
   type: subset_bound
   why: Enterprise churn is a subset of all churn
+  assumes: Enterprise is one value of a single segment attribute
   subset: How many Enterprise customers churned in 2026?
   superset: How many customers churned in 2026?
 
 - id: m08
   type: subset_bound
   why: voluntary churn is a subset of all cancellations
+  assumes: voluntary churn is defined as a subset of all cancellations
   subset: How many customers churned in Q3 2026?
   superset: How many customers canceled in Q3 2026, including nonpayment?
 
 - id: m09
   type: monotonic
   why: cumulative revenue cannot shrink as the window grows
+  assumes: revenue counts paid invoices only and invoice amounts are never negative (refunds are a status, not negative rows); with negative adjustments, cumulative revenue can fall
+  assumes_sql: "SELECT COALESCE(MIN(amount_usd), 0) >= 0 FROM invoices"
   questions:
     - How much revenue did we collect from January through June 2026?
     - How much revenue did we collect from January through September 2026?
