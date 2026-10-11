@@ -107,9 +107,9 @@ Two local models, qwen2.5-coder 3B and 7B, on all 28 cases with 3 runs each, run
 | Correct clarify or refuse | 50% | 62% |
 | Cases where runs disagreed | 17 of 28 | 9 of 28 |
 | Wrong answers that were unanimous across runs | 20% | 42% |
-| Lowest-cost policy (hand-off cost 1) | abstain on everything | abstain on everything |
+| Lowest-cost agreement threshold (hand-off cost 1) | abstain on everything | abstain on everything |
 
-The bigger model is right far more often and far more stable, but more of its mistakes are unanimous, so run-to-run agreement catches less of what is left. Three of those unanimous mistakes: summing twelve monthly MRR snapshots into one "2025 MRR" (about 10x too high), counting every account that ever paid as "active" (581 instead of 405), and dropping the test-account filter (MRR about 3% too high). The decision this leads to, and when it flips, is written up in [D-003](https://github.com/roy-vinay/ai-decision-log/blob/main/decisions/D-003-when-should-a-bi-bot-stay-quiet.md).
+The bigger model is right far more often and far more stable, but more of its mistakes are unanimous, so run-to-run agreement catches less of what is left. Three of those unanimous mistakes: summing twelve monthly MRR snapshots into one "2025 MRR" (about 10x too high), counting every account that ever paid as "active" (581 instead of 405), and dropping the test-account filter (MRR about 3% too high). Comparing agreement against a single run with the deterministic SQL checks (in-sample, since the checks were built on this trap set) is written up in [D-003](https://github.com/roy-vinay/ai-decision-log/blob/main/decisions/D-003-when-should-a-bi-bot-stay-quiet.md).
 
 Grading the first real run also caught five bugs in this harness, all fixed with tests: a time-filter rule that missed `YEAR()`/`QUARTER()`, a filter-value rule that read function arguments as filters, `CURRENT_DATE` reading the runner's clock instead of the eval's fixed date, a ranking compare that failed an account returned by id instead of name, and two misleading error messages. A simulated bot only finds the failures you imagined; a real one finds the ones in your grader.
 
