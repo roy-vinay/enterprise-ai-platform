@@ -1,21 +1,21 @@
 {
   "simulated-overconfident": {
-    "cases": 36,
-    "pass_rate": 0.6111111111111112,
-    "accuracy_on_answerable": 0.75,
+    "cases": 37,
+    "pass_rate": 0.6216216216216216,
+    "accuracy_on_answerable": 0.76,
     "correct_abstention_rate": 0.3333333333333333,
-    "answered": 32,
+    "answered": 33,
     "wrong_answers": 14,
-    "confident_wrong_rate": 0.21875,
+    "confident_wrong_rate": 0.21212121212121213,
     "substitution_rate": 0.0,
-    "unstable_cases": 14,
+    "unstable_cases": 15,
     "judge_unavailable_runs": 0,
-    "answer_runs": 162,
+    "answer_runs": 167,
     "unsafe_sql_runs": 7,
     "restricted_access_runs": 8,
     "over_budget_runs": 4,
     "right_answer_wrong_way": 5,
-    "right_answer_wrong_way_rate": 0.05319148936170213,
+    "right_answer_wrong_way_rate": 0.05154639175257732,
     "median_rows_scanned": 9499,
     "max_rows_scanned": 2000600,
     "failures_by_owner": {
@@ -33,39 +33,39 @@
     "holdout": [
       {
         "fold": "A->B",
-        "dev_cases": 19,
+        "dev_cases": 20,
         "test_cases": 17,
         "threshold": Infinity,
         "test_cost": 12.0,
-        "test_cost_answer_all": 11,
+        "test_cost_answer_all": 14,
         "test_coverage": 0.0,
         "test_wrong": 0
       },
       {
         "fold": "B->A",
         "dev_cases": 17,
-        "test_cases": 19,
+        "test_cases": 20,
         "threshold": 1.0,
-        "test_cost": 23.0,
-        "test_cost_answer_all": 44,
-        "test_coverage": 0.5789473684210527,
-        "test_wrong": 5
+        "test_cost": 22.0,
+        "test_cost_answer_all": 41,
+        "test_coverage": 0.5,
+        "test_wrong": 4
       }
     ],
-    "metamorphic_violations": 7
+    "metamorphic_violations": 8
   },
   "simulated-careful": {
-    "cases": 36,
-    "pass_rate": 0.9444444444444444,
-    "accuracy_on_answerable": 0.9166666666666666,
+    "cases": 37,
+    "pass_rate": 0.9459459459459459,
+    "accuracy_on_answerable": 0.92,
     "correct_abstention_rate": 1.0,
-    "answered": 23,
+    "answered": 24,
     "wrong_answers": 2,
     "confident_wrong_rate": 0.0,
     "substitution_rate": 0.0,
     "unstable_cases": 3,
     "judge_unavailable_runs": 0,
-    "answer_runs": 116,
+    "answer_runs": 121,
     "unsafe_sql_runs": 0,
     "restricted_access_runs": 1,
     "over_budget_runs": 0,
@@ -84,23 +84,23 @@
     "holdout": [
       {
         "fold": "A->B",
-        "dev_cases": 19,
+        "dev_cases": 20,
         "test_cases": 17,
         "threshold": 0.8,
-        "test_cost": 0,
-        "test_cost_answer_all": 0,
-        "test_coverage": 0.7058823529411765,
+        "test_cost": 1.0,
+        "test_cost_answer_all": 3,
+        "test_coverage": 0.6470588235294118,
         "test_wrong": 0
       },
       {
         "fold": "B->A",
         "dev_cases": 17,
-        "test_cases": 19,
-        "threshold": 0.0,
-        "test_cost": 8.0,
-        "test_cost_answer_all": 8.0,
-        "test_coverage": 0.5789473684210527,
-        "test_wrong": 2
+        "test_cases": 20,
+        "threshold": 1.0,
+        "test_cost": 2.0,
+        "test_cost_answer_all": 5.0,
+        "test_coverage": 0.55,
+        "test_wrong": 0
       }
     ],
     "metamorphic_violations": 2

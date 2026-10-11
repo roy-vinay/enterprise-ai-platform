@@ -1,4 +1,4 @@
-# BI bot trap set, v0.2
+# BI bot trap set, v0.3
 #
 # Each case is a question someone might ask a BI bot, the behavior a careful
 # analyst would show, and a reference query that recomputes the right answer
@@ -19,7 +19,7 @@
 # NT below stands for the test-account exclusion every query needs:
 #   account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
 
-version: "0.2"
+version: "0.3"
 as_of: "2026-10-01"
 cases:
 
@@ -405,6 +405,28 @@ cases:
   tempting_sql: |
     SELECT SUM(amount_usd) FROM invoices
     WHERE status = 'paid' AND invoice_date >= DATE '2026-07-01' AND invoice_date < DATE '2026-10-01'
+
+- id: c29
+  question: Among Enterprise accounts that opened at least one support ticket in Q3 2026, what was the average number of tickets per account?
+  category: traps
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0.000001
+  cost_weight: 3
+  metrics: [support_tickets]
+  trap: AVG(ticket_id) averages ID numbers; both real models made this mistake on a01 (v0.2 runs)
+  reference_sql: |
+    SELECT AVG(n) FROM (
+      SELECT t.account_id, COUNT(*) AS n
+      FROM support_tickets t JOIN accounts a USING (account_id)
+      WHERE a.segment = 'Enterprise' AND NOT a.is_test
+        AND t.created_at >= DATE '2026-07-01' AND t.created_at < DATE '2026-10-01'
+      GROUP BY t.account_id)
+  tempting_sql: |
+    SELECT AVG(t.ticket_id)
+    FROM support_tickets t JOIN accounts a USING (account_id)
+    WHERE a.segment = 'Enterprise' AND NOT a.is_test
+      AND t.created_at >= DATE '2026-07-01' AND t.created_at < DATE '2026-10-01'
 
 # ----------------------------------------------------------------- refusals
 - id: c21

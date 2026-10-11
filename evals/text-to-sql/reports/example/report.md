@@ -8,8 +8,8 @@
 
 | Bot | Pass rate | Accuracy (answerable) | Correct abstention | Confident-wrong rate | Unstable cases | Judge unavailable |
 |---|---|---|---|---|---|---|
-| simulated-overconfident | 61% | 75% | 33% | 22% | 14 | 0 |
-| simulated-careful | 94% | 92% | 100% | 0% | 3 | 0 |
+| simulated-overconfident | 62% | 76% | 33% | 21% | 15 | 0 |
+| simulated-careful | 95% | 92% | 100% | 0% | 3 | 0 |
 
 *Confident-wrong rate*: share of the bot's answers that were wrong even though every repeated run gave the same answer. These are the answers users act on, because nothing looks off. *Judge unavailable*: runs where the LLM judge errored; they are counted as failures, never as clean passes.
 
@@ -19,8 +19,8 @@ A correct number is not the whole job. These checks grade how each answer was pr
 
 | Bot | Answers | Right but failed a trust check | Restricted access | Over scan budget | Unsafe SQL | Median rows read | Max rows read |
 |---|---|---|---|---|---|---|---|
-| simulated-overconfident | 162 | 5 (5%) | 8 | 4 | 7 | 9,499 | 2,000,600 |
-| simulated-careful | 116 | 0 (0%) | 1 | 0 | 0 | 9,499 | 157,400 |
+| simulated-overconfident | 167 | 5 (5%) | 8 | 4 | 7 | 9,499 | 2,000,600 |
+| simulated-careful | 121 | 0 (0%) | 1 | 0 | 0 | 9,499 | 157,400 |
 
 *Right but failed a trust check*: runs whose result matched the reference and still failed on access or cost. Counts are over runs, not cases.
 
@@ -55,7 +55,7 @@ A correct number is not the whole job. These checks grade how each answer was pr
 
 ## Metamorphic checks (simulated-overconfident)
 
-34 relations checked (10 hand-written, 24 generated paraphrase sets), **7 violated**. None of these checks uses a reference answer. A relation that holds shows consistency, not correctness: answers can be consistently wrong.
+35 relations checked (10 hand-written, 25 generated paraphrase sets), **8 violated**. None of these checks uses a reference answer. A relation that holds shows consistency, not correctness: answers can be consistently wrong.
 
 | Relation | Type | Why it should hold | What broke |
 |---|---|---|---|
@@ -66,6 +66,7 @@ A correct number is not the whole job. These checks grade how each answer was pr
 | p-c02 | equivalent | surface paraphrases of c02 | 'Quick question: What was MRR last month?' disagrees: expected 1,462,632, got 1,462,243 |
 | p-c05 | equivalent | surface paraphrases of c05 | 'Hey bot, what's our year-to-date revenue?' disagrees: expected 10,890,880, got 10,632,575 |
 | p-c13 | equivalent | surface paraphrases of c13 | 'Quick question: How many active accounts do we have?' disagrees: expected 401, got 409 |
+| p-c29 | equivalent | surface paraphrases of c29 | 'Hey bot, among Enterprise accounts that opened at least one support ticket in Q3 2026, what was the average number of tickets per account?' disagrees: expected 2.238, got 2,705 |
 
 ## When should the bot stay quiet? (simulated-overconfident)
 
@@ -75,18 +76,18 @@ The bot answers only when its runs agree at least this often. Agreement is a coa
 
 | Agreement threshold | Coverage | Accuracy of answers | Wrong answers | Cost |
 |---|---|---|---|---|
-| 0.00 | 89% | 56% | 14 | 55 |
-| 0.60 | 89% | 56% | 14 | 55 |
-| 0.80 | 78% | 57% | 12 | 51 |
-| 1.00 | 61% | 68% | 7 | 32 |
-| abstain all | 0% | n/a | 0 | 24 (lowest, in-sample) |
+| 0.00 | 89% | 58% | 14 | 55 |
+| 0.60 | 89% | 58% | 14 | 55 |
+| 0.80 | 76% | 57% | 12 | 52 |
+| 1.00 | 59% | 68% | 7 | 33 |
+| abstain all | 0% | n/a | 0 | 25 (lowest, in-sample) |
 
 **Held-out check.** The lowest-cost row above is chosen on the same cases it is scored on, which flatters it. Below, the threshold is chosen on one half of the cases and scored on the other, both ways round. With this few cases, treat it as exploratory.
 
 | Fold | Threshold chosen on dev | Test cost | Test cost if it always answered | Test coverage |
 |---|---|---|---|---|
-| A->B (19/17) | abstain all | 12 | 11 | 0% |
-| B->A (17/19) | 1.00 | 23 | 44 | 58% |
+| A->B (20/17) | abstain all | 12 | 14 | 0% |
+| B->A (17/20) | 1.00 | 22 | 41 | 50% |
 
 Agreement catches unstable answers. It cannot catch a bot that is wrong the same way every time; those need the trap set and the rule checks.
 
@@ -100,9 +101,9 @@ Measured against faults the simulator injected on purpose.
 | over_scan | 3 | 3 | 100% |
 | overanswer | 42 | 42 | 100% |
 | restricted_access | 3 | 3 | 100% |
-| substitution | 14 | 14 | 100% |
+| substitution | 16 | 16 | 100% |
 
-False alarms on clean runs: 0 of 107 (0%).
+False alarms on clean runs: 0 of 110 (0%).
 
 ## Does the eval protect the semantic model?
 
@@ -136,9 +137,9 @@ False alarms on clean runs: 0 of 107 (0%).
 | paying_accounts | 2 | 2 | 0 | 0 |
 | api_calls | 1 | 1 | 1 | 0 |
 | monthly_active_users | 0 | 1 | 0 | 1 |
-| support_tickets | 1 | 0 | 0 | 0 |
+| support_tickets | 2 | 0 | 0 | 0 |
 | avg_csat | 1 | 2 | 1 | 0 |
 | refunded_invoices | 1 | 2 | 2 | 0 |
 | product_events | 2 | 0 | 0 | 0 |
 | contacts | 1 | 0 | 0 | 0 |
-| (global filters) | 36 | 1 | 1 | 0 |
+| (global filters) | 37 | 1 | 1 | 0 |

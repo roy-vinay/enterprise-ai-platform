@@ -36,14 +36,15 @@ Respond with JSON only:
 
 class OllamaBot:
     def __init__(self, model_def: dict, model: str = "qwen2.5-coder:7b",
-                 host: str | None = None, temperature: float = 0.7, timeout: int = 180):
-        self.name = f"ollama-{model}"
+                 host: str | None = None, temperature: float = 0.7, timeout: int = 180,
+                 policy_prompt: bool = True):
+        self.name = f"ollama-{model}" + ("" if policy_prompt else "-no-policy-prompt")
         self.llm = model
         self.host = host or os.environ.get("OLLAMA_HOST", "http://localhost:11434")
         self.temperature = temperature  # >0 so repeated runs can disagree (self-consistency)
         self.timeout = timeout
         self.verbose = True  # print per-case progress; real models are slow
-        self.system = SYSTEM.format(context=semantic.prompt_context(model_def),
+        self.system = SYSTEM.format(context=semantic.prompt_context(model_def, policy_prompt),
                                     ddl=data.schema_ddl())
 
     def ask(self, question: str, run: int = 0) -> BotResponse:

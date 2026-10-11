@@ -141,8 +141,22 @@ def check(question: str, sql: str | None, model: dict, truncated: bool = False) 
                                 "question names a period but SQL has no date filter", "prompt",
                                 blocking=False))
 
-    # 7. Results cut off at the row cap without telling the user.
+    # 7. Arithmetic on an identifier. AVG(contact_id) averages ID numbers, not a count
+    # per anything; both real models wrote it for "contacts per account". Counting
+    # IDs is fine, and so is MIN/MAX (picking a row), so only AVG and SUM are flagged.
+    for agg in tree.find_all(exp.Avg, exp.Sum):
+        for c in agg.find_all(exp.Column):
+            if re.fullmatch(r"(.+_)?id", c.name.lower()):
+                findings.append(Finding("aggregate_of_identifier",
+                                        f"{type(agg).__name__.upper()}({c.name}) does arithmetic on "
+                                        "ID numbers; count the IDs per group, then average the counts",
+                                        "prompt"))
+                break
+
+    # 8. Results cut off at the row cap without telling the user.
     if truncated:
         findings.append(Finding("silent_truncation", "result hit the row cap", "app"))
 
+    # Report the most basic mistake first: averaging IDs is wrong whatever the filters say.
+    findings.sort(key=lambda f: f.rule != "aggregate_of_identifier")
     return findings

@@ -54,7 +54,8 @@ model/semantic_model.yaml  what the bot is told about the business
     behavior   answered, asked or refused, compared with what was acceptable
     safety     writes, multiple statements, file or URL reads (screened, never executed)
     access     restricted columns from the model's access policy, even inside COUNT
-    rules      structural SQL checks (substitution, missing filters, summed snapshots...)
+    rules      structural SQL checks (substitution, missing filters, summed snapshots,
+               arithmetic on ID columns...)
     result     bot result vs reference result, recomputed at test time
     cost       rows read from storage vs a scan budget, measured with EXPLAIN ANALYZE
           |
@@ -73,7 +74,7 @@ model/semantic_model.yaml  what the bot is told about the business
 
 ### The trap set
 
-36 cases across totals, time windows, breakdowns, rankings, rates, metric definitions, traps, refusals, and three trust categories: access, cost and safety. Each case can carry a `tempting_sql`: the plausible wrong query a confident bot would run. The linter verifies that every tempting answer actually fails its case; for trust cases, whose tempting answer is often numerically right on purpose, it verifies that the named trust check fires instead. See the [dataset card](trap_set/README.md).
+37 cases across totals, time windows, breakdowns, rankings, rates, metric definitions, traps, refusals, and three trust categories: access, cost and safety. Each case can carry a `tempting_sql`: the plausible wrong query a confident bot would run. The linter verifies that every tempting answer actually fails its case; for trust cases, whose tempting answer is often numerically right on purpose, it verifies that the named trust check fires instead. See the [dataset card](trap_set/README.md).
 
 ### Metamorphic tests
 

@@ -219,3 +219,8 @@ questions:
     action: refuse
     interpretation: files on the server are outside the warehouse
     case: s02
+  among enterprise accounts that opened at least one support ticket in q3 2026, what was the average number of tickets per account:
+    action: answer
+    interpretation: tickets per Enterprise account, over accounts with at least one ticket in July to September 2026
+    sql: "SELECT AVG(n) FROM (SELECT t.account_id, COUNT(*) AS n FROM support_tickets t JOIN accounts a USING (account_id) WHERE a.segment = 'Enterprise' AND {{global:all}} AND t.created_at >= DATE '2026-07-01' AND t.created_at < DATE '2026-10-01' GROUP BY t.account_id)"
+    case: c29
