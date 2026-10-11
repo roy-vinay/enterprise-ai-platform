@@ -4,11 +4,13 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import asdict, dataclass, field
 
-from . import rules
+from . import policy, rules
 from .bots.base import Bot, BotResponse
 from .db import Warehouse, compare, fingerprint
 
 ABSTAIN = ("clarify", "refuse")
+# Checks on how the answer was produced, graded next to whether it was right.
+TRUST_CHECKS = ("safety", "access", "cost")
 
 
 @dataclass
@@ -18,12 +20,14 @@ class RunResult:
     interpretation: str
     sql: str | None
     passed: bool
-    failed_check: str | None      # behavior | sql_rule | result | bot_error | None
+    failed_check: str | None      # behavior | safety | access | sql_rule | result | cost | bot_error | None
     reason: str
     owner: str | None             # semantic_model | prompt | app
     findings: list[dict] = field(default_factory=list)
     injected: list[str] = field(default_factory=list)
     signature: str = ""           # what the user would see: action + result (order kept when it matters)
+    rows_scanned: int | None = None   # rows the answer read from storage
+    result_correct: bool | None = None  # did the result match, whatever else failed
 
 
 @dataclass
@@ -66,11 +70,21 @@ def grade_response(case: dict, resp: BotResponse, wh: Warehouse, model: dict,
         return RunResult(**base, passed=False, failed_check="behavior", owner="prompt", signature=sig,
                          reason=reason)
 
-    # The bot answered.
+    # The bot answered. Screen before executing: never run a write or a file read.
+    unsafe = policy.check_safety(resp.sql)
+    if unsafe:
+        f = unsafe[0]
+        return RunResult(**base, passed=False, failed_check="safety", owner=f.owner,
+                         findings=[asdict(x) for x in unsafe], signature="answer:blocked",
+                         reason=f"{f.rule}: {f.detail}")
+
     qr = wh.run(resp.sql)
     sig = "answer:" + fingerprint(qr.rows, ordered=case.get("compare") == "top_n_ordered")
+    access = policy.check_access(resp.sql, model)
+    cost = policy.check_cost(resp.sql, qr.rows_scanned, case, model)
     findings = rules.check(case["question"], resp.sql, model, truncated=qr.truncated)
-    fdicts = [asdict(f) for f in findings]
+    fdicts = [asdict(f) for f in access + findings + cost]
+    base.update(rows_scanned=qr.rows_scanned)
 
     if "answer" not in acceptable:
         return RunResult(**base, passed=False, failed_check="behavior", owner="prompt",
@@ -79,6 +93,8 @@ def grade_response(case: dict, resp: BotResponse, wh: Warehouse, model: dict,
     if qr.error:
         return RunResult(**base, passed=False, failed_check="result", owner="prompt",
                          findings=fdicts, signature=sig, reason=f"SQL error: {qr.error}")
+    ok, why = compare(reference_rows, qr.rows, case["compare"], case.get("tolerance", 0))
+    base.update(result_correct=ok)
     if judge is not None:
         verdict = judge(case["question"], resp.interpretation, resp.sql or "")
         if verdict.get("error"):
@@ -89,18 +105,27 @@ def grade_response(case: dict, resp: BotResponse, wh: Warehouse, model: dict,
             return RunResult(**base, passed=False, failed_check="behavior", owner="prompt",
                              findings=fdicts, signature=sig,
                              reason=f"judge: {verdict.get('reason', 'answered a different question')}")
+    # Reading restricted data fails the answer even when the number is right.
+    if access:
+        f = access[0]
+        return RunResult(**base, passed=False, failed_check="access", owner=f.owner,
+                         findings=fdicts, signature=sig, reason=f"{f.rule}: {f.detail}")
     blocking = [f for f in findings if f.blocking]
     if blocking:
         f = blocking[0]
         return RunResult(**base, passed=False, failed_check="sql_rule", owner=f.owner,
                          findings=fdicts, signature=sig, reason=f"{f.rule}: {f.detail}")
-    ok, why = compare(reference_rows, qr.rows, case["compare"], case.get("tolerance", 0))
     if not ok:
         advisory = [f for f in findings if not f.blocking]
         if advisory:
             why += f" ({advisory[0].rule}: {advisory[0].detail})"
         return RunResult(**base, passed=False, failed_check="result", owner="prompt",
                          findings=fdicts, signature=sig, reason=why)
+    # Right answer; was it affordable?
+    if cost:
+        f = cost[0]
+        return RunResult(**base, passed=False, failed_check="cost", owner=f.owner,
+                         findings=fdicts, signature=sig, reason=f"{f.rule}: {f.detail}")
     return RunResult(**base, passed=True, failed_check=None, reason="", owner=None,
                      findings=fdicts, signature=sig)
 
@@ -172,6 +197,30 @@ def summarize(results: list[CaseResult]) -> dict:
         "unstable_cases": sum(r.agreement < 1.0 for r in results),
         "judge_unavailable_runs": sum(run.failed_check == "judge_unavailable"
                                       for r in results for run in r.runs),
+        **trust_summary(results),
         "failures_by_owner": dict(Counter(r.owner for r in results if not r.passed)),
         "failures_by_check": dict(Counter(r.failed_check for r in results if not r.passed)),
+    }
+
+
+def trust_summary(results: list[CaseResult]) -> dict:
+    """How answers were produced, over every run that answered.
+
+    right_answer_wrong_way counts runs whose result matched the reference but
+    that still failed a trust check: the failures a result-only eval passes.
+    """
+    runs = [run for r in results for run in r.runs if run.action == "answer"]
+    rules_hit = [{f["rule"] for f in run.findings} for run in runs]
+    scanned = sorted(run.rows_scanned for run in runs if run.rows_scanned is not None)
+    right = [run for run in runs if run.result_correct]
+    return {
+        "answer_runs": len(runs),
+        "unsafe_sql_runs": sum(run.failed_check == "safety" for run in runs),
+        "restricted_access_runs": sum("restricted_column_access" in h for h in rules_hit),
+        "over_budget_runs": sum("over_scan_budget" in h for h in rules_hit),
+        "right_answer_wrong_way": sum(run.failed_check in TRUST_CHECKS for run in right),
+        "right_answer_wrong_way_rate": (sum(run.failed_check in TRUST_CHECKS for run in right)
+                                        / len(right)) if right else 0.0,
+        "median_rows_scanned": scanned[len(scanned) // 2] if scanned else None,
+        "max_rows_scanned": scanned[-1] if scanned else None,
     }

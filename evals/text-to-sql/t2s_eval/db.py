@@ -1,6 +1,7 @@
 """Run queries against the warehouse and compare result sets."""
 from __future__ import annotations
 
+import json
 import math
 import re
 from dataclasses import dataclass
@@ -13,6 +14,7 @@ class QueryResult:
     rows: list[tuple] | None
     error: str | None = None
     truncated: bool = False
+    rows_scanned: int | None = None   # rows read from storage; the cost a warehouse bills for
 
 
 _NOW = re.compile(r"\bcurrent_date\b|\bcurrent_timestamp\b|\bnow\s*\(\s*\)|\btoday\s*\(\s*\)",
@@ -26,6 +28,12 @@ class Warehouse:
         self.as_of = as_of
 
     def run(self, sql: str | None) -> QueryResult:
+        """Run one read query and measure how many rows it read from storage.
+
+        Callers must screen SQL with policy.check_safety first: the connection
+        is read-only, but read-only does not stop table functions that read
+        local files.
+        """
         if not sql:
             return QueryResult(None, "no sql")
         # The eval's "today" is frozen; a query that reads the wall clock gets that date,
@@ -36,7 +44,32 @@ class Warehouse:
         except Exception as e:
             return QueryResult(None, f"{type(e).__name__}: {str(e).splitlines()[0]}")
         truncated = len(rows) > self.row_cap
-        return QueryResult(rows[: self.row_cap], truncated=truncated)
+        return QueryResult(rows[: self.row_cap], truncated=truncated,
+                           rows_scanned=self.rows_scanned(sql))
+
+    def rows_scanned(self, sql: str) -> int | None:
+        """Rows read from storage, summed over every table scan in the plan.
+
+        Measured with a separate EXPLAIN ANALYZE pass, because the answer itself
+        is fetched only up to the row cap and a partly fetched query is never
+        fully profiled. DuckDB skips row groups whose min/max cannot match a
+        filter, so this drops when a filter can prune, much as bytes scanned do
+        in a partitioned warehouse. A bare COUNT(*) is answered from metadata
+        and reads nothing.
+        """
+        try:
+            self.con.execute("PRAGMA enable_profiling='json'")
+            out = self.con.execute("EXPLAIN ANALYZE " + sql).fetchall()
+            plan = json.loads(out[0][1])
+        except Exception:
+            return None
+        finally:
+            self.con.execute("PRAGMA disable_profiling")
+
+        def walk(node) -> int:
+            n = node.get("operator_rows_scanned", 0) or 0
+            return n + sum(walk(c) for c in node.get("children", []))
+        return walk(plan)
 
 
 def _num(v):

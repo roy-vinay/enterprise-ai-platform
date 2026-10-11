@@ -62,6 +62,9 @@ def run(model: dict, cases: list[dict], relations: list[dict],
 
 def _probe_sql(model: dict, name: str) -> str:
     met = model["metrics"][name]
+    if not met.get("time_column"):  # an undated metric (e.g. contacts): one total
+        return (f"SELECT {semantic.agg_sql(met)} FROM {met['table']} "
+                f"WHERE {semantic.where_sql(model, name)}")
     return (f"SELECT date_trunc('month', {met['time_column']}) AS m, {semantic.agg_sql(met)} "
             f"FROM {met['table']} WHERE {semantic.where_sql(model, name)} GROUP BY 1 ORDER BY 1")
 

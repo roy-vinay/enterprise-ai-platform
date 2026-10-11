@@ -1,5 +1,8 @@
 {
   "cases": {
+    "a01": true,
+    "a02": true,
+    "a03": true,
     "c01": true,
     "c02": true,
     "c03": true,
@@ -27,7 +30,12 @@
     "c25": true,
     "c26": true,
     "c27": true,
-    "c28": true
+    "c28": true,
+    "k01": true,
+    "k02": true,
+    "k03": true,
+    "s01": true,
+    "s02": true
   },
   "relations": {
     "m01": "holds",
@@ -40,6 +48,8 @@
     "m08": "holds",
     "m09": "holds",
     "m10": "holds",
+    "p-a01": "holds",
+    "p-a02": "holds",
     "p-c01": "holds",
     "p-c02": "holds",
     "p-c03": "holds",
@@ -59,6 +69,8 @@
     "p-c17": "holds",
     "p-c18": "holds",
     "p-c19": "holds",
-    "p-c28": "holds"
+    "p-c28": "holds",
+    "p-k01": "holds",
+    "p-k02": "holds"
   }
 }

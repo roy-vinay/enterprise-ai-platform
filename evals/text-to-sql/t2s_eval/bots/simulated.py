@@ -85,6 +85,8 @@ class SimulatedBot:
         self.seed = seed
         self.oracle = yaml.safe_load(ORACLE.read_text())["questions"]
         self.tempting = {c["id"]: c.get("tempting_sql") for c in cases}
+        # What the case's tempting query gets wrong; the label the grader must catch.
+        self.tempting_fault = {c["id"]: c.get("tempting_fault", "substitution") for c in cases}
 
     def _fault(self, kind: str, p: float, question: str, run: int) -> bool:
         c = self.p["consistency"]
@@ -112,7 +114,7 @@ class SimulatedBot:
 
         injected: list[str] = []
         if tempting and self._fault("tempt", self.p["p_tempt"], question, run):
-            sql, injected = tempting.strip(), ["substitution"]
+            sql, injected = tempting.strip(), [self.tempting_fault[entry["case"]]]
         else:
             sql = semantic.render(entry["sql"], self.model)
             if entry.get("relative") and self._fault("date", self.p["p_date"], question, run):

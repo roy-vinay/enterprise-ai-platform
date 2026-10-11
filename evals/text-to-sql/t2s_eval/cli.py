@@ -106,8 +106,9 @@ def cmd_run(a):
 
 def cmd_lint(_):
     """Fail if a trap-set case cannot tell a plausible wrong answer from the right one."""
-    wh = Warehouse(str(config.ensure_warehouse()))
-    issues = lint.lint(config.load_cases(), wh)
+    model = semantic.load(config.MODEL)
+    wh = Warehouse(str(config.ensure_warehouse()), model.get("row_cap", 100), str(model["as_of"]))
+    issues = lint.lint(config.load_cases(), wh, model)
     for i in issues:
         print(f"{i['case']}: {i['issue']} ({i['detail']})")
     print(f"{len(issues)} lint issues")

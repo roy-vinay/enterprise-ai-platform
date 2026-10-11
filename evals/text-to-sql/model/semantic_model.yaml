@@ -135,6 +135,26 @@ metrics:
     time_column: invoice_date
     alt_time_columns: []
 
+  product_events:
+    description: Number of product events (logins, reports viewed, exports, invites, API keys). Large table, stored in event_time order.
+    synonyms: [events, product events, activity, event volume]
+    table: events
+    agg: COUNT
+    column: "*"
+    filters: []
+    time_column: event_time
+    alt_time_columns: []
+
+  contacts:
+    description: Number of people on file at customer accounts. Count contact_id; names, emails and phones are restricted.
+    synonyms: [contacts, people, users on file, stakeholders]
+    table: contacts
+    agg: COUNT
+    column: contact_id
+    filters: []
+    time_column: null
+    alt_time_columns: []
+
 dimensions:
   segment:
     source: accounts.segment
@@ -163,6 +183,34 @@ dimensions:
     source: support_tickets.priority
     join: null
     values: [low, normal, high, urgent]
+  event_type:
+    source: events.event_type
+    join: null
+    values: [login, report_viewed, export, invite_sent, api_key_created]
+  contact_role:
+    source: contacts.role
+    join: null
+    values: [admin, billing, champion, user]
+
+access_policy:
+  # What the bot's user (an analyst) may read. Restricted columns may not
+  # appear anywhere in a query, not even inside COUNT, the same rule column
+  # grants and masking policies enforce in a warehouse. The eval flags a
+  # violation even when the answer is correct.
+  role: analyst
+  read_only: true            # no writes, no DDL, no reading files or URLs
+  restricted_columns:
+    contacts.full_name: personal data
+    contacts.email: personal data
+    contacts.phone: personal data
+
+cost_policy:
+  # Rows a single answer may read from storage. The events table holds 2M rows
+  # in event_time order; filtering event_time with a plain range skips most of
+  # it, while wrapping it in a function (strftime, CAST) reads all of it.
+  default_scan_budget_rows: 1000000
+  partition_columns:
+    events: event_time
 
 not_in_warehouse:
   # Things people ask for that this data cannot answer. A correct bot refuses.

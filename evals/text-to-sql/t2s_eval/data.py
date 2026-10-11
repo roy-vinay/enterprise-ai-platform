@@ -10,6 +10,13 @@ Tables
   invoices         monthly invoices, with soft deletes
   usage_monthly    product usage per account per month
   support_tickets  tickets with priority and optional CSAT
+  contacts         people at each customer account; names, emails and phones are
+                   personal data that analysts may not read (see access_policy)
+  events           ~2M product events, stored in time order so a time filter can
+                   skip most of the table (the cost checks measure exactly that)
+
+contacts and events are generated from their own random streams after the
+original six tables, so adding them did not change a single existing row.
 """
 from __future__ import annotations
 
@@ -58,7 +65,24 @@ CREATE TABLE usage_monthly (
 CREATE TABLE support_tickets (
   ticket_id INTEGER PRIMARY KEY, account_id INTEGER, created_at DATE,
   priority VARCHAR, csat_score INTEGER);
+CREATE TABLE contacts (
+  contact_id INTEGER PRIMARY KEY, account_id INTEGER, full_name VARCHAR,
+  email VARCHAR, phone VARCHAR, role VARCHAR);
+CREATE TABLE events (
+  event_id BIGINT, account_id INTEGER, event_time TIMESTAMP, event_type VARCHAR);
 """
+
+FIRST_NAMES = ["Ada", "Ben", "Chloe", "Dev", "Elena", "Femi", "Grace", "Hiro", "Isla", "Jon",
+               "Kavya", "Liam", "Maya", "Noor", "Omar", "Priya", "Quinn", "Rosa", "Sam", "Tara"]
+LAST_NAMES = ["Abara", "Brandt", "Costa", "Dube", "Evans", "Fischer", "Garcia", "Hughes",
+              "Ito", "Jensen", "Kim", "Lopez", "Mehta", "Novak", "Okafor", "Park"]
+CONTACT_ROLES = [("admin", 0.30), ("billing", 0.25), ("champion", 0.20), ("user", 0.25)]
+# Weighted by repetition (40% login, 30% report_viewed, 10% each of the rest), so
+# "most common" has a single right answer.
+EVENT_TYPES = ["login"] * 4 + ["report_viewed"] * 3 + ["export", "invite_sent", "api_key_created"]
+N_EVENTS = 2_000_000
+# Spread events evenly from START through END: 1004 days / 2M events ~ 43.37 s apart.
+EVENT_STEP_MS = 43_372
 
 
 def _pick(rng: random.Random, weighted):
@@ -149,8 +173,45 @@ def build(path: str | Path, n_accounts: int = 600) -> Path:
             with f.open("w", newline="") as fh:
                 csv.writer(fh).writerows(["" if v is None else v for v in r] for r in rows)
             con.execute(f"COPY {table} FROM '{f}' (HEADER false, NULLSTR '')")
+    _add_contacts(con, n_accounts)
+    _add_events(con, n_accounts)
     con.close()
     return path
+
+
+def _add_contacts(con, n_accounts: int) -> None:
+    """One to four contacts per account. Fictional names, example.com-style
+    domains and 555 phone numbers: nothing here belongs to a real person."""
+    rng = random.Random(SEED + 1)
+    rows, cid = [], 1
+    for aid in range(1, n_accounts + 1):
+        for _ in range(rng.choices([1, 2, 3, 4], [0.35, 0.35, 0.2, 0.1])[0]):
+            first, last = rng.choice(FIRST_NAMES), rng.choice(LAST_NAMES)
+            rows.append((cid, aid, f"{first} {last}",
+                         f"{first.lower()}.{last.lower()}@account-{aid:04d}.example",
+                         f"+1-555-01{rng.randint(0, 99):02d}", _pick(rng, CONTACT_ROLES)))
+            cid += 1
+    con.executemany("INSERT INTO contacts VALUES (?, ?, ?, ?, ?, ?)", rows)
+
+
+def _add_events(con, n_accounts: int) -> None:
+    """Product events, generated in SQL and inserted in time order.
+
+    Time order matters: DuckDB keeps min/max per row group, so a filter on
+    event_time skips most of the table, the same way a partitioned warehouse
+    prunes partitions. A filter that wraps the column in a function (strftime,
+    CAST) cannot use that and reads every row. The answers are identical; the
+    cost is not.
+    """
+    types = ", ".join(f"'{t}'" for t in EVENT_TYPES)
+    con.execute(f"""
+        INSERT INTO events
+        SELECT i,
+               ((i * 104729) % {n_accounts}) + 1,
+               TIMESTAMP '{START.isoformat()}' + INTERVAL ({EVENT_STEP_MS} * i) MILLISECOND,
+               [{types}][((i * 7919) % {len(EVENT_TYPES)}) + 1]
+        FROM range({N_EVENTS}) t(i)
+        ORDER BY i""")
 
 
 def schema_ddl() -> str:

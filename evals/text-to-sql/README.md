@@ -9,6 +9,7 @@ Most text-to-SQL evals ask one question: did the generated SQL match the expecte
 3. **Would the eval notice if someone broke the semantic model?** Mutation testing breaks it on purpose and checks.
 4. **Where should the bot draw the line?** A risk-coverage curve and a business-weighted cost model turn "how accurate is it" into "how much run-to-run agreement should it need before it answers."
 5. **Can we trust the grader?** The grader is itself measured against injected faults. Agreement with human labels is supported, but no independently reviewed label set is published yet.
+6. **Was a right answer produced the right way?** Trust checks fail answers that read restricted columns, scan far more data than the question needs, or try to write or read files, even when the number is correct.
 
 Everything runs locally on a synthetic B2B SaaS warehouse in DuckDB, with no API keys. A simulated bot with labeled failure modes lets the whole pipeline run in CI; an Ollama adapter evaluates real open models.
 
@@ -51,15 +52,19 @@ model/semantic_model.yaml  what the bot is told about the business
           v
   grade each run
     behavior   answered, asked or refused, compared with what was acceptable
+    safety     writes, multiple statements, file or URL reads (screened, never executed)
+    access     restricted columns from the model's access policy, even inside COUNT
     rules      structural SQL checks (substitution, missing filters, summed snapshots...)
     result     bot result vs reference result, recomputed at test time
+    cost       rows read from storage vs a scan budget, measured with EXPLAIN ANALYZE
           |
           v
   repeat N times -> majority vote on pass/fail (ties fail) + run-to-run agreement
           |
           v
-  report: confident-wrong rate, owner routing, metamorphic violations,
-          risk-coverage curve, grader recall, mutation score and blind spots
+  report: confident-wrong rate, right-answer-wrong-way rate, owner routing,
+          metamorphic violations, risk-coverage curve, grader recall,
+          mutation score and blind spots
 ```
 
 **Store queries, not answers.** Each case stores the SQL that produces the right answer, not the number. Numbers go stale as data changes; a query recomputes the truth at the moment of the test.
@@ -68,7 +73,7 @@ model/semantic_model.yaml  what the bot is told about the business
 
 ### The trap set
 
-28 cases across totals, time windows, breakdowns, rankings, rates, metric definitions, traps and refusals. Each case can carry a `tempting_sql`: the plausible wrong query a confident bot would run. The linter verifies that every tempting answer actually fails its case. See the [dataset card](trap_set/README.md).
+36 cases across totals, time windows, breakdowns, rankings, rates, metric definitions, traps, refusals, and three trust categories: access, cost and safety. Each case can carry a `tempting_sql`: the plausible wrong query a confident bot would run. The linter verifies that every tempting answer actually fails its case; for trust cases, whose tempting answer is often numerically right on purpose, it verifies that the named trust check fires instead. See the [dataset card](trap_set/README.md).
 
 ### Metamorphic tests
 
@@ -97,9 +102,19 @@ Two cautions are built into the report. Agreement is a coarse consistency signal
 
 The headline metric is the **confident-wrong rate**: wrong answers given with full self-agreement. These are the answers users act on, because nothing about them looks uncertain.
 
+### Trust checks
+
+A result-only eval passes a bot that gets the right number by reading customer emails, or by scanning three years of events to count one week. These checks grade how the answer was produced, and the report counts the runs that were **right but failed a trust check**: exactly the failures a result-only eval misses.
+
+- **Access.** The semantic model carries an `access_policy` listing restricted columns (contact names, emails and phones). A restricted column may not appear anywhere in the query, through `SELECT *`, a CTE or a subquery, not even inside `COUNT`. That is how column grants behave, and it keeps the rule simple enough to trust. The bot is told the policy, so a violation routes to the prompt; production should also enforce it with grants or masking.
+- **Cost.** Every answered query is re-run under `EXPLAIN ANALYZE` to count rows read from storage. The 2M-row `events` table is stored in time order, so a plain range on `event_time` lets DuckDB skip row groups, the way a partitioned warehouse prunes partitions; wrapping the column in `CAST` or `strftime` reads everything. Answers over the scan budget fail, with a hint when the cause is a wrapped partition column.
+- **Safety.** Writes, multiple statements, and table functions that read files or URLs fail the run and are never executed. Read-only credentials are not enough on their own: a read-only DuckDB connection still runs `read_csv` on any local file.
+
+Failure priority is fixed: safety, then behavior, then access, then the structural rules, then the result, then cost. So a cost failure always means the answer was right and too expensive.
+
 ## Real-model results
 
-Two local models, qwen2.5-coder 3B and 7B, on all 28 cases with 3 runs each, run on CPU-only GitHub runners. Every raw response is in [`reports/real/`](reports/real), so these numbers can be re-graded with `--bot replay`.
+Two local models, qwen2.5-coder 3B and 7B, on the original 28 cases with 3 runs each (before the trust checks were added; the 8 trust cases have not yet been run against real models), run on CPU-only GitHub runners. Every raw response is in [`reports/real/`](reports/real), so these numbers can be re-graded with `--bot replay`.
 
 | | 3B | 7B |
 |---|---:|---:|
@@ -121,6 +136,8 @@ These came out of running the pipeline against its own simulator, and they apply
 - **One test per metric can pass by coincidence.** A mutation that dated nonpayment cancellations by start date instead of end date survived, because the single test for that metric happened to produce the same count either way.
 - **"Abstain on everything" is a real baseline.** Once the sweep included it, never answering came within one point of the best threshold for the overconfident simulated bot, and one held-out fold chose it outright. A bot that guesses on refusal and trap questions can be worth less than no bot at all under a cost model like this one.
 - **Many semantic model filters are redundant on today's data.** Dropping `csat_score IS NOT NULL` changes nothing because `AVG` already skips nulls; dropping `status = 'canceled'` changes nothing while `canceled_by` is only set on canceled rows. Fine today, silently wrong the day the data changes.
+- **The same answer can cost 58 times more.** Counting last week's events with a plain `event_time` range reads about 35 thousand rows; the same query with `CAST(event_time AS DATE)` returns the identical count and reads all 2 million. No result check can see that difference.
+- **Read-only is not the same as safe.** The warehouse connection was read-only from the start, so writes were already blocked. File reads were not: `read_csv('/any/local/file')` runs fine on a read-only connection. Unsafe SQL is now screened before anything executes.
 - **Agreement is not enough.** It catches answers that wobble between runs. It cannot catch a bot that is wrong the same way every time, which is exactly the confident failure that hurts. That is what the trap set and rule checks are for.
 
 ## Plug in your own bot
@@ -152,7 +169,8 @@ evals/text-to-sql/
     data.py                   synthetic warehouse generator
     semantic.py               model rendering and mutation operators
     bots/                     simulated bot (+ oracle), Ollama adapter, record/replay, interface
-    grade.py rules.py db.py   grading, SQL rules, result comparison
+    grade.py rules.py db.py   grading, SQL rules, result comparison, rows-read measurement
+    policy.py                 trust checks: safety, restricted columns, scan budget
     metamorphic.py            relation checks and generated paraphrases
     selective.py              risk-coverage sweep, cost model, chart
     mutation.py               mutation testing and coverage map
@@ -166,5 +184,7 @@ evals/text-to-sql/
 ## Limits
 
 - Numbers in the example report come from the simulated bot and describe the simulator, not any real system. Real-model numbers are in [`reports/real/`](reports/real): two small local models on 28 cases, so they are directional.
+- Rows read is a DuckDB proxy for warehouse cost: it reflects row-group pruning, not bytes billed or column pruning, and a bare `COUNT(*)` reads zero rows because it is answered from metadata. The budget catches the order-of-magnitude mistakes, not fine differences.
+- The access rule matches column names against the policy. It is strict on purpose and does not understand masking, row-level policies or derived columns.
 - The rule checks are tuned to this warehouse's conventions (test accounts, soft deletes, snapshot metrics). The idea transfers; the specific rules need adapting.
 - Measuring agreement needs several runs per question, which multiplies cost for hosted models. Local models make that cheap.

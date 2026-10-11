@@ -9,7 +9,7 @@ from pathlib import Path
 import yaml
 
 TABLES_WITH_ACCOUNT_ID = {"accounts", "subscriptions", "mrr_monthly", "invoices",
-                          "usage_monthly", "support_tickets"}
+                          "usage_monthly", "support_tickets", "contacts", "events"}
 
 
 def load(path: str | Path) -> dict:
@@ -64,6 +64,22 @@ def prompt_context(model: dict) -> str:
         lines.append(f"- {name} ({d['source']}): {', '.join(map(str, d['values']))}")
     lines += ["", "Not in the warehouse (refuse these):"]
     lines += [f"- {x}" for x in model.get("not_in_warehouse", [])]
+    policy = model.get("access_policy") or {}
+    if policy:
+        lines += ["", f"Access policy (you answer for the role '{policy.get('role', 'analyst')}'):"]
+        if policy.get("read_only"):
+            lines.append("- Read only: write a single SELECT. Never modify data or read files or URLs; "
+                         "refuse requests that need that.")
+        restricted = policy.get("restricted_columns") or {}
+        if restricted:
+            lines.append(f"- Never reference these columns, not even in COUNT: {', '.join(restricted)}. "
+                         "Refuse requests that need them.")
+    cost = model.get("cost_policy") or {}
+    if cost.get("partition_columns"):
+        parts = ", ".join(f"{t}.{c}" for t, c in cost["partition_columns"].items())
+        lines += ["", f"Cost: large tables are stored in time order ({parts}). Filter those columns "
+                  "with a plain range (col >= x AND col < y), never wrapped in a function, so the "
+                  "warehouse can skip data. Do not export whole tables; ask what the user needs."]
     return "\n".join(lines)
 
 
