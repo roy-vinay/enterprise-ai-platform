@@ -50,7 +50,7 @@ jobs:
   ollama:
     if: github.event_name == 'workflow_dispatch' && inputs.ollama_model != ''
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 330   # CPU-only runners are slow; ~200 model calls per run
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
