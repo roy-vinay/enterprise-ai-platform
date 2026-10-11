@@ -1,0 +1,456 @@
+# BI bot trap set, v0.1
+#
+# Each case is a question someone might ask a BI bot, the behavior a careful
+# analyst would show, and a reference query that recomputes the right answer
+# at test time (store queries, not numbers: numbers go stale).
+#
+# Fields
+#   expected_behavior     answer | clarify | refuse
+#   acceptable_behaviors  every behavior that should pass (defaults to expected)
+#   compare               scalar | set | top_n_ordered | none
+#   tolerance             relative tolerance for numeric comparison
+#   reference_sql         the correct answer, recomputed at run time
+#   tempting_sql          the plausible wrong answer a confident bot gives
+#   cost_weight           1 to 5, business cost of a confident wrong answer
+#   metrics               semantic model metrics the case exercises (coverage)
+#   trap                  what makes the case hard, in one line
+#
+# Dates: the bot's "today" is 2026-10-01; data runs through 2026-09-30.
+# NT below stands for the test-account exclusion every query needs:
+#   account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+version: "0.1"
+as_of: "2026-10-01"
+cases:
+
+# ---------------------------------------------------------------- totals
+- id: c01
+  question: What was MRR in September 2026?
+  category: totals
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0.000001   # MRR moves <0.1% a month; a loose tolerance passes the wrong month
+  cost_weight: 5
+  metrics: [mrr]
+  reference_sql: |
+    SELECT SUM(mrr_usd) FROM mrr_monthly
+    WHERE month = DATE '2026-09-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c03
+  question: What is our current ARR?
+  category: totals
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0.000001   # MRR moves <0.1% a month; a loose tolerance passes the wrong month
+  cost_weight: 5
+  metrics: [arr]
+  trap: '"current" means the latest complete month, not a sum over the year'
+  reference_sql: |
+    SELECT SUM(mrr_usd) * 12 FROM mrr_monthly
+    WHERE month = DATE '2026-09-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+  tempting_sql: |
+    SELECT SUM(mrr_usd) FROM mrr_monthly
+    WHERE month >= DATE '2025-10-01' AND month < DATE '2026-10-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c04
+  question: How much revenue did we collect in Q3 2026?
+  category: totals
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0.001
+  cost_weight: 5
+  metrics: [revenue]
+  trap: revenue means paid invoices only; open, void and refunded invoices do not count
+  reference_sql: |
+    SELECT SUM(amount_usd) FROM invoices
+    WHERE status = 'paid' AND NOT is_deleted
+      AND invoice_date >= DATE '2026-07-01' AND invoice_date < DATE '2026-10-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+  tempting_sql: |
+    SELECT SUM(amount_usd) FROM invoices
+    WHERE invoice_date >= DATE '2026-07-01' AND invoice_date < DATE '2026-10-01'
+
+- id: c11
+  question: How many new customers did we sign in Q2 2026?
+  category: totals
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0
+  cost_weight: 3
+  metrics: [new_accounts]
+  trap: internal test accounts must be excluded
+  reference_sql: |
+    SELECT COUNT(*) FROM accounts
+    WHERE NOT is_test
+      AND created_at >= DATE '2026-04-01' AND created_at < DATE '2026-07-01'
+  tempting_sql: |
+    SELECT COUNT(*) FROM accounts
+    WHERE created_at >= DATE '2026-04-01' AND created_at < DATE '2026-07-01'
+
+- id: c12
+  question: How many paying accounts did we have in September 2026?
+  category: totals
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0
+  cost_weight: 3
+  metrics: [paying_accounts]
+  reference_sql: |
+    SELECT COUNT(DISTINCT account_id) FROM mrr_monthly
+    WHERE month = DATE '2026-09-01' AND mrr_usd > 0
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c17
+  question: How many invoices were refunded in 2025?
+  category: totals
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0
+  cost_weight: 2
+  metrics: [refunded_invoices]
+  trap: soft-deleted invoices must be excluded
+  reference_sql: |
+    SELECT COUNT(*) FROM invoices
+    WHERE status = 'refunded' AND NOT is_deleted
+      AND invoice_date >= DATE '2025-01-01' AND invoice_date < DATE '2026-01-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c19
+  question: How many API calls did EMEA accounts make in Q2 2026?
+  category: totals
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0.001
+  cost_weight: 2
+  metrics: [api_calls]
+  reference_sql: |
+    SELECT SUM(u.api_calls) FROM usage_monthly u JOIN accounts a USING (account_id)
+    WHERE a.region = 'EMEA' AND NOT a.is_test
+      AND u.month >= DATE '2026-04-01' AND u.month < DATE '2026-07-01'
+
+# ---------------------------------------------------------- time windows
+- id: c02
+  question: What was MRR last month?
+  category: time_windows
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0.000001   # MRR moves <0.1% a month; a loose tolerance passes the wrong month
+  cost_weight: 5
+  metrics: [mrr]
+  trap: relative date; "last month" is September 2026 given today is 2026-10-01
+  reference_sql: |
+    SELECT SUM(mrr_usd) FROM mrr_monthly
+    WHERE month = DATE '2026-09-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c05
+  question: What's our year-to-date revenue?
+  category: time_windows
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0.001
+  cost_weight: 5
+  metrics: [revenue]
+  trap: relative date; YTD runs 2026-01-01 through 2026-09-30
+  reference_sql: |
+    SELECT SUM(amount_usd) FROM invoices
+    WHERE status = 'paid' AND NOT is_deleted
+      AND invoice_date >= DATE '2026-01-01' AND invoice_date < DATE '2026-10-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+# -------------------------------------------------------------- breakdowns
+- id: c06
+  question: Revenue by region in September 2026
+  category: breakdowns
+  expected_behavior: answer
+  compare: set
+  tolerance: 0.001
+  cost_weight: 4
+  metrics: [revenue]
+  reference_sql: |
+    SELECT a.region, SUM(i.amount_usd)
+    FROM invoices i JOIN accounts a USING (account_id)
+    WHERE i.status = 'paid' AND NOT i.is_deleted AND NOT a.is_test
+      AND i.invoice_date >= DATE '2026-09-01' AND i.invoice_date < DATE '2026-10-01'
+    GROUP BY a.region
+
+- id: c14
+  question: What was MRR by plan in September 2026?
+  category: breakdowns
+  expected_behavior: answer
+  compare: set
+  tolerance: 0.001
+  cost_weight: 4
+  metrics: [mrr]
+  reference_sql: |
+    SELECT plan, SUM(mrr_usd) FROM mrr_monthly
+    WHERE month = DATE '2026-09-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+    GROUP BY plan
+
+- id: c16
+  question: How many support tickets did each segment open in 2025?
+  category: breakdowns
+  expected_behavior: answer
+  compare: set
+  tolerance: 0
+  cost_weight: 2
+  metrics: [support_tickets]
+  reference_sql: |
+    SELECT a.segment, COUNT(*)
+    FROM support_tickets t JOIN accounts a USING (account_id)
+    WHERE NOT a.is_test
+      AND t.created_at >= DATE '2025-01-01' AND t.created_at < DATE '2026-01-01'
+    GROUP BY a.segment
+
+# ---------------------------------------------------------------- rankings
+- id: c07
+  question: Top 5 accounts by revenue in 2025
+  category: rankings
+  expected_behavior: answer
+  compare: top_n_ordered
+  tolerance: 0.001
+  cost_weight: 3
+  metrics: [revenue]
+  reference_sql: |
+    SELECT a.name, SUM(i.amount_usd) AS revenue
+    FROM invoices i JOIN accounts a USING (account_id)
+    WHERE i.status = 'paid' AND NOT i.is_deleted AND NOT a.is_test
+      AND i.invoice_date >= DATE '2025-01-01' AND i.invoice_date < DATE '2026-01-01'
+    GROUP BY a.name ORDER BY revenue DESC LIMIT 5
+
+# ------------------------------------------------------------------- rates
+- id: c15
+  question: What was average CSAT for urgent tickets in Q3 2026?
+  category: rates
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0.005
+  cost_weight: 2
+  metrics: [avg_csat]
+  trap: tickets without a score must be ignored, not counted as zero
+  reference_sql: |
+    SELECT AVG(csat_score) FROM support_tickets
+    WHERE priority = 'urgent' AND csat_score IS NOT NULL
+      AND created_at >= DATE '2026-07-01' AND created_at < DATE '2026-10-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+  tempting_sql: |
+    SELECT SUM(COALESCE(csat_score, 0)) * 1.0 / COUNT(*) FROM support_tickets
+    WHERE priority = 'urgent'
+      AND created_at >= DATE '2026-07-01' AND created_at < DATE '2026-10-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c18
+  question: What was month-over-month MRR growth in September 2026, as a percent?
+  category: rates
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0.01
+  cost_weight: 4
+  metrics: [mrr]
+  reference_sql: |
+    WITH m AS (
+      SELECT month, SUM(mrr_usd) AS v FROM mrr_monthly
+      WHERE month IN (DATE '2026-08-01', DATE '2026-09-01')
+        AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+      GROUP BY month)
+    SELECT (MAX(v) FILTER (WHERE month = DATE '2026-09-01')
+          / MAX(v) FILTER (WHERE month = DATE '2026-08-01') - 1) * 100 FROM m
+
+# ----------------------------------------------------- definitions (churn)
+- id: c08
+  question: How many customers churned in Q3 2026?
+  category: definitions
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0
+  cost_weight: 4
+  metrics: [churned_accounts]
+  trap: churn means customer-initiated cancellation; nonpayment cancellations are separate
+  reference_sql: |
+    SELECT COUNT(DISTINCT account_id) FROM subscriptions
+    WHERE status = 'canceled' AND canceled_by = 'customer'
+      AND end_date >= DATE '2026-07-01' AND end_date < DATE '2026-10-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+  tempting_sql: |
+    SELECT COUNT(DISTINCT account_id) FROM subscriptions
+    WHERE status = 'canceled'
+      AND end_date >= DATE '2026-07-01' AND end_date < DATE '2026-10-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c28
+  question: How many customers canceled in Q3 2026, including nonpayment?
+  category: definitions
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0
+  cost_weight: 4
+  metrics: [churned_accounts, involuntary_churned_accounts]
+  trap: the user widened the definition explicitly; the bot must follow
+  reference_sql: |
+    SELECT COUNT(DISTINCT account_id) FROM subscriptions
+    WHERE status = 'canceled'
+      AND end_date >= DATE '2026-07-01' AND end_date < DATE '2026-10-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+  tempting_sql: |
+    SELECT COUNT(DISTINCT account_id) FROM subscriptions
+    WHERE status = 'canceled' AND canceled_by = 'customer'
+      AND end_date >= DATE '2026-07-01' AND end_date < DATE '2026-10-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c09
+  question: How many accounts were canceled for nonpayment in 2025?
+  category: definitions
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0
+  cost_weight: 3
+  metrics: [involuntary_churned_accounts]
+  reference_sql: |
+    SELECT COUNT(DISTINCT account_id) FROM subscriptions
+    WHERE status = 'canceled' AND canceled_by = 'system_nonpayment'
+      AND end_date >= DATE '2025-01-01' AND end_date < DATE '2026-01-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c10
+  question: How many customers did we lose to competitors in 2026?
+  category: definitions
+  expected_behavior: answer
+  compare: scalar
+  tolerance: 0
+  cost_weight: 4
+  metrics: [churned_accounts]
+  reference_sql: |
+    SELECT COUNT(DISTINCT account_id) FROM subscriptions
+    WHERE status = 'canceled' AND canceled_by = 'customer'
+      AND cancel_reason = 'switched_competitor'
+      AND end_date >= DATE '2026-01-01' AND end_date < DATE '2027-01-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c13
+  question: How many active accounts do we have?
+  category: definitions
+  expected_behavior: answer
+  acceptable_behaviors: [answer, clarify]
+  compare: scalar
+  tolerance: 0
+  cost_weight: 3
+  metrics: [paying_accounts]
+  trap: '"active" is ambiguous (paying vs using the product); the model maps it to paying accounts, and asking is also fine'
+  reference_sql: |
+    SELECT COUNT(DISTINCT account_id) FROM mrr_monthly
+    WHERE month = DATE '2026-09-01' AND mrr_usd > 0
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+  tempting_sql: |
+    SELECT COUNT(*) FROM subscriptions WHERE status = 'active'
+
+# ------------------------------------------------------------------- traps
+- id: c20
+  question: What was total MRR in 2025?
+  category: traps
+  expected_behavior: clarify
+  acceptable_behaviors: [clarify, answer]
+  compare: scalar
+  tolerance: 0.001
+  cost_weight: 5
+  metrics: [mrr]
+  trap: MRR is a snapshot; summing twelve months is meaningless. Ask, or give December 2025 MRR
+  reference_sql: |
+    SELECT SUM(mrr_usd) FROM mrr_monthly
+    WHERE month = DATE '2025-12-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+  tempting_sql: |
+    SELECT SUM(mrr_usd) FROM mrr_monthly
+    WHERE month >= DATE '2025-01-01' AND month < DATE '2026-01-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c25
+  question: How many customers canceled because of bugs in 2026?
+  category: traps
+  expected_behavior: clarify
+  acceptable_behaviors: [clarify, refuse]
+  compare: none
+  cost_weight: 4
+  metrics: [churned_accounts]
+  trap: there is no "bugs" cancel reason; mapping it to missing_feature is a silent substitution
+  tempting_sql: |
+    SELECT COUNT(DISTINCT account_id) FROM subscriptions
+    WHERE status = 'canceled' AND cancel_reason = 'missing_feature'
+      AND end_date >= DATE '2026-01-01' AND end_date < DATE '2027-01-01'
+      AND account_id IN (SELECT account_id FROM accounts WHERE NOT is_test)
+
+- id: c27
+  question: What's our churn rate?
+  category: traps
+  expected_behavior: clarify
+  acceptable_behaviors: [clarify, refuse]
+  compare: none
+  cost_weight: 4
+  metrics: [churned_accounts]
+  trap: no churn rate is defined (logo vs revenue, which period, which denominator)
+  tempting_sql: |
+    SELECT COUNT(*) FILTER (WHERE status = 'canceled') * 100.0 / COUNT(*) FROM subscriptions
+
+- id: c26
+  question: How are we doing this quarter?
+  category: traps
+  expected_behavior: clarify
+  compare: none
+  cost_weight: 2
+  metrics: []
+  trap: no metric named; any number is a guess
+  tempting_sql: |
+    SELECT SUM(amount_usd) FROM invoices
+    WHERE status = 'paid' AND invoice_date >= DATE '2026-07-01' AND invoice_date < DATE '2026-10-01'
+
+# ----------------------------------------------------------------- refusals
+- id: c21
+  question: What's our NPS by segment?
+  category: refusals
+  expected_behavior: refuse
+  compare: none
+  cost_weight: 4
+  metrics: []
+  trap: no NPS data; CSAT is a different measure
+  tempting_sql: |
+    SELECT a.segment, AVG(t.csat_score) * 2 FROM support_tickets t
+    JOIN accounts a USING (account_id) GROUP BY a.segment
+
+- id: c22
+  question: What was gross margin in Q3 2026?
+  category: refusals
+  expected_behavior: refuse
+  compare: none
+  cost_weight: 5
+  metrics: []
+  trap: no cost data in the warehouse
+  tempting_sql: |
+    SELECT SUM(amount_usd) FILTER (WHERE status = 'paid') / SUM(amount_usd) FROM invoices
+    WHERE invoice_date >= DATE '2026-07-01' AND invoice_date < DATE '2026-10-01'
+
+- id: c23
+  question: Which sales rep closed the most revenue in Q3 2026?
+  category: refusals
+  expected_behavior: refuse
+  compare: none
+  cost_weight: 3
+  metrics: []
+  trap: no sales rep data; answering with the top account is a substitution
+  tempting_sql: |
+    SELECT a.name, SUM(i.amount_usd) AS revenue FROM invoices i JOIN accounts a USING (account_id)
+    WHERE i.invoice_date >= DATE '2026-07-01' AND i.invoice_date < DATE '2026-10-01'
+    GROUP BY a.name ORDER BY revenue DESC LIMIT 1
+
+- id: c24
+  question: What will MRR be in December 2026?
+  category: refusals
+  expected_behavior: refuse
+  compare: none
+  cost_weight: 4
+  metrics: []
+  trap: a forecast, not a lookup; returning September MRR answers a different question
+  tempting_sql: |
+    SELECT SUM(mrr_usd) FROM mrr_monthly WHERE month = DATE '2026-09-01'

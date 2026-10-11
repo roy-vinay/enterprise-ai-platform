@@ -1,0 +1,97 @@
+{
+  "simulated-overconfident": {
+    "cases": 28,
+    "pass_rate": 0.6071428571428571,
+    "accuracy_on_answerable": 0.75,
+    "correct_abstention_rate": 0.25,
+    "answered": 26,
+    "wrong_answers": 11,
+    "confident_wrong_rate": 0.15384615384615385,
+    "substitution_rate": 0.0,
+    "unstable_cases": 11,
+    "judge_unavailable_runs": 0,
+    "failures_by_owner": {
+      "prompt": 11
+    },
+    "failures_by_check": {
+      "result": 3,
+      "sql_rule": 3,
+      "behavior": 5
+    },
+    "in_sample_best_threshold": "1.00",
+    "holdout": [
+      {
+        "fold": "A->B",
+        "dev_cases": 14,
+        "test_cases": 14,
+        "threshold": Infinity,
+        "test_cost": 10.0,
+        "test_cost_answer_all": 22,
+        "test_coverage": 0.0,
+        "test_wrong": 0
+      },
+      {
+        "fold": "B->A",
+        "dev_cases": 14,
+        "test_cases": 14,
+        "threshold": 1.0,
+        "test_cost": 11.0,
+        "test_cost_answer_all": 21,
+        "test_coverage": 0.6428571428571429,
+        "test_wrong": 3
+      }
+    ],
+    "metamorphic_violations": 7
+  },
+  "simulated-careful": {
+    "cases": 28,
+    "pass_rate": 0.9285714285714286,
+    "accuracy_on_answerable": 0.9,
+    "correct_abstention_rate": 1.0,
+    "answered": 19,
+    "wrong_answers": 2,
+    "confident_wrong_rate": 0.0,
+    "substitution_rate": 0.0,
+    "unstable_cases": 2,
+    "judge_unavailable_runs": 0,
+    "failures_by_owner": {
+      "prompt": 2
+    },
+    "failures_by_check": {
+      "sql_rule": 1,
+      "result": 1
+    },
+    "in_sample_best_threshold": "1.00",
+    "holdout": [
+      {
+        "fold": "A->B",
+        "dev_cases": 14,
+        "test_cases": 14,
+        "threshold": 1.0,
+        "test_cost": 1.0,
+        "test_cost_answer_all": 1.0,
+        "test_coverage": 0.6428571428571429,
+        "test_wrong": 0
+      },
+      {
+        "fold": "B->A",
+        "dev_cases": 14,
+        "test_cases": 14,
+        "threshold": 0.0,
+        "test_cost": 7,
+        "test_cost_answer_all": 7,
+        "test_coverage": 0.7142857142857143,
+        "test_wrong": 2
+      }
+    ],
+    "metamorphic_violations": 2
+  },
+  "mutation": {
+    "mutants": 24,
+    "killed": 13,
+    "blind_spots": [
+      "involuntary_churned_accounts.time_column.start_date",
+      "monthly_active_users.change_agg"
+    ]
+  }
+}

@@ -1,0 +1,99 @@
+name: text-to-sql evals
+
+on:
+  pull_request:
+    paths: ["evals/text-to-sql/**", ".github/workflows/text-to-sql-evals.yml"]
+  push:
+    branches: [main, "ollama-run/**"]   # push to ollama-run/<anything> to evaluate real models
+    paths: ["evals/text-to-sql/**", ".github/workflows/text-to-sql-evals.yml"]
+  schedule:
+    - cron: "17 9 * * *"   # nightly
+  workflow_dispatch:
+    inputs:
+      ollama_model:
+        description: "Also run against a real local model (leave empty to skip)"
+        required: false
+        default: ""
+
+defaults:
+  run:
+    working-directory: evals/text-to-sql
+
+jobs:
+  eval:
+    if: ${{ !startsWith(github.ref_name, 'ollama-run/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: evals/text-to-sql/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Build synthetic warehouse
+        run: python -m t2s_eval.cli build-data
+      - name: Test the eval itself
+        run: python -m pytest -q tests
+      - name: Lint the trap set (every case must catch its tempting wrong answer)
+        run: python -m t2s_eval.cli lint
+      - name: Semantic model regression gate
+        run: python -m t2s_eval.cli gate
+      - name: Full report (simulated bots, mutation testing)
+        if: always()
+        run: python -m t2s_eval.cli run
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: text-to-sql-report
+          path: evals/text-to-sql/reports/latest
+
+  ollama:
+    permissions:
+      contents: write   # to commit results back to the ollama-run branch
+    if: (github.event_name == 'workflow_dispatch' && inputs.ollama_model != '') || startsWith(github.ref_name, 'ollama-run/')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJSON(inputs.ollama_model != '' && format('["{0}"]', inputs.ollama_model) || '["qwen2.5-coder:3b","qwen2.5-coder:7b"]') }}
+    timeout-minutes: 330   # CPU-only runners are slow; ~200 model calls per run
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Install Ollama and pull model
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve > /tmp/ollama.log 2>&1 &
+          sleep 5
+          ollama pull "${{ matrix.model }}"
+      - run: python -m t2s_eval.cli build-data
+      - name: Evaluate a real model
+        id: eval
+        run: |
+          SAFE=$(echo "${{ matrix.model }}" | tr ':/' '__')
+          echo "out=reports/real/$SAFE" >> "$GITHUB_OUTPUT"
+          python -m t2s_eval.cli run --bot ollama --model "${{ matrix.model }}" --runs 3 \
+            --skip-mutation --out "reports/real/$SAFE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: text-to-sql-report-ollama-${{ strategy.job-index }}
+          path: evals/text-to-sql/${{ steps.eval.outputs.out }}
+      - name: Commit results to the run branch
+        # Only on ollama-run/* branches, never on main or a PR branch.
+        if: always() && startsWith(github.ref_name, 'ollama-run/') && steps.eval.outputs.out != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f "${{ steps.eval.outputs.out }}"
+          git commit -m "Real-model results: ${{ matrix.model }}" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase -q origin "${{ github.ref_name }}" && git push -q origin HEAD:"${{ github.ref_name }}" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
