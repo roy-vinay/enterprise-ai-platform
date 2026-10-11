@@ -112,7 +112,14 @@ def grade_case(case: dict, bot: Bot, wh: Warehouse, model: dict, n_runs: int = 3
 
 def grade_suite(cases: list[dict], bot: Bot, wh: Warehouse, model: dict,
                 n_runs: int = 3, judge=None) -> list[CaseResult]:
-    return [grade_case(c, bot, wh, model, n_runs, judge) for c in cases]
+    out = []
+    for i, c in enumerate(cases, 1):
+        out.append(grade_case(c, bot, wh, model, n_runs, judge))
+        if getattr(bot, "verbose", False):
+            r = out[-1]
+            print(f"  [{i}/{len(cases)}] {c['id']} {'PASS' if r.passed else 'FAIL'} "
+                  f"{r.runs[0].action} {r.reason[:80]}", flush=True)
+    return out
 
 
 def summarize(results: list[CaseResult]) -> dict:

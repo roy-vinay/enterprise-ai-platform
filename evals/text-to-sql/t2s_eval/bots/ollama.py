@@ -42,6 +42,7 @@ class OllamaBot:
         self.host = host or os.environ.get("OLLAMA_HOST", "http://localhost:11434")
         self.temperature = temperature  # >0 so repeated runs can disagree (self-consistency)
         self.timeout = timeout
+        self.verbose = True  # print per-case progress; real models are slow
         self.system = SYSTEM.format(context=semantic.prompt_context(model_def),
                                     ddl=data.schema_ddl())
 
