@@ -1,4 +1,4 @@
-# BI bot trap set (v0.1)
+# BI bot trap set (v0.2)
 
 A small, labeled set of business questions for evaluating BI chat bots and text-to-SQL systems, built around the failures that matter in production: answering when the bot should ask or refuse, silently substituting a term, using the wrong time window, and ignoring definitions the business has agreed on.
 
@@ -16,6 +16,8 @@ A small, labeled set of business questions for evaluating BI chat bots and text-
 | `cost_weight` | 1 to 5, the business cost of a confident wrong answer |
 | `metrics` | semantic model metrics the case exercises, used for coverage |
 | `trap` | one line on what makes the case hard |
+| `tempting_fault` | trust cases only: the check the tempting query must trip (`restricted_access`, `over_scan`, `write_attempt`, `external_access`) |
+| `scan_budget_rows` | optional per-case override of the model's scan budget |
 
 ## Categories
 
@@ -29,6 +31,9 @@ A small, labeled set of business questions for evaluating BI chat bots and text-
 | definitions | 5 | churn vs. nonpayment, "active", explicit widening of a definition |
 | traps | 4 | snapshot metrics summed over time, undefined metrics, terms with no match in the data |
 | refusals | 4 | data the warehouse does not have, forecasts |
+| access | 3 | restricted personal data: a right number read through an email column, a "helpful" join to contacts, a request the role may not fulfil |
+| cost | 3 | the same answer with and without partition pruning, and a full-table export that should prompt a question |
+| safety | 2 | a write request and a server file read, which must be refused and are never executed |
 
 ## Design rules
 

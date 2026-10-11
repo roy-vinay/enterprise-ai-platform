@@ -37,6 +37,9 @@ def render(bot_runs: dict[str, dict], primary: str, mutants: list[MutantResult] 
     p = bot_runs[primary]
     results: list[CaseResult] = p["results"]
 
+    # 1b. Trust checks
+    L += trust_section(bot_runs, primary)
+
     # 2. Confident wrong answers
     cw = sorted([r for r in results if r.answered and not r.passed and r.agreement == 1.0],
                 key=lambda r: -r.cost_weight)
@@ -54,7 +57,8 @@ def render(bot_runs: dict[str, dict], primary: str, mutants: list[MutantResult] 
           "| Owner | Failures | Typical fix |", "|---|---|---|"]
     fixes = {"semantic_model": "add or correct a metric definition, filter or verified query",
              "prompt": "ask when a term does not match; refuse out-of-scope questions",
-             "app": "fix message handling, truncation notices, timeouts"}
+             "app": "fix message handling, truncation notices, timeouts; connect with read-only "
+                    "credentials and file access off"}
     for owner, n in sorted(p["summary"]["failures_by_owner"].items(), key=lambda x: -x[1]):
         L.append(f"| {owner} | {n} | {fixes.get(owner, '')} |")
     L.append("")
@@ -142,3 +146,39 @@ def render(bot_runs: dict[str, dict], primary: str, mutants: list[MutantResult] 
                          f"{row['blind_spots']} |")
             L.append("")
     return "\n".join(L)
+
+
+def _n(x):
+    return "n/a" if x is None else f"{x:,}"
+
+
+def trust_section(bot_runs: dict[str, dict], primary: str) -> list[str]:
+    """Right answers produced the wrong way: the failures a result-only eval passes."""
+    L = ["## Right answer, wrong way", "",
+         "A correct number is not the whole job. These checks grade how each answer was produced: "
+         "whether it read restricted columns, how many rows it read from storage, and whether it "
+         "tried to write or read files. Unsafe SQL is never executed.", "",
+         "| Bot | Answers | Right but failed a trust check | Restricted access | Over scan budget | Unsafe SQL | Median rows read | Max rows read |",
+         "|---|---|---|---|---|---|---|---|"]
+    for name, r in bot_runs.items():
+        s = r["summary"]
+        L.append(f"| {name} | {s.get('answer_runs', 0)} | {s.get('right_answer_wrong_way', 0)} "
+                 f"({_pct(s.get('right_answer_wrong_way_rate'))}) | {s.get('restricted_access_runs', 0)} | "
+                 f"{s.get('over_budget_runs', 0)} | {s.get('unsafe_sql_runs', 0)} | "
+                 f"{_n(s.get('median_rows_scanned'))} | {_n(s.get('max_rows_scanned'))} |")
+    L += ["", "*Right but failed a trust check*: runs whose result matched the reference and still "
+          "failed on access or cost. Counts are over runs, not cases.", ""]
+    rows = [(r, run) for r in bot_runs[primary]["results"] for run in r.runs
+            if run.failed_check in ("safety", "access", "cost")]
+    if rows:
+        seen, L2 = set(), []
+        for r, run in rows:
+            key = (r.case_id, run.reason)
+            if key in seen:
+                continue
+            seen.add(key)
+            right = {True: "yes", False: "no", None: "not run"}[run.result_correct]
+            L2.append(f"| {r.case_id} | {r.question} | {run.failed_check} | {right} | {run.reason} |")
+        L += [f"### Trust failures ({primary})", "",
+              "| Case | Question | Check | Result right? | Detail |", "|---|---|---|---|---|", *L2, ""]
+    return L

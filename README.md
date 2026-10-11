@@ -10,7 +10,7 @@ Every module runs locally on synthetic data with no API keys, so anything here c
 
 | Module | Status | What it does |
 |---|---|---|
-| [evals/text-to-sql](evals/text-to-sql) | working | An eval pipeline for BI chat bots that measures when they should stay quiet: a trap set with refuse and clarify cases, metamorphic tests that need no answer key, mutation testing of the semantic model, and a risk-coverage analysis with a business-weighted cost model and a held-out threshold check. |
+| [evals/text-to-sql](evals/text-to-sql) | working | An eval pipeline for BI chat bots that measures when they should stay quiet: a trap set with refuse and clarify cases, metamorphic tests that need no answer key, mutation testing of the semantic model, a risk-coverage analysis with a business-weighted cost model and a held-out threshold check, and trust checks that fail right answers produced the wrong way (restricted columns, unpruned scans, writes and file reads). |
 
 ## How the modules relate
 
