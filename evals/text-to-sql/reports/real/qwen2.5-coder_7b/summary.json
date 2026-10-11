@@ -1,46 +1,54 @@
 {
-  "ollama-qwen2.5-coder:7b (replayed)": {
-    "cases": 28,
-    "pass_rate": 0.5357142857142857,
-    "accuracy_on_answerable": 0.5,
-    "correct_abstention_rate": 0.625,
-    "answered": 22,
-    "wrong_answers": 12,
-    "confident_wrong_rate": 0.22727272727272727,
-    "substitution_rate": 0.0,
-    "unstable_cases": 9,
+  "ollama-qwen2.5-coder:7b": {
+    "cases": 36,
+    "pass_rate": 0.5277777777777778,
+    "accuracy_on_answerable": 0.4166666666666667,
+    "correct_abstention_rate": 0.75,
+    "answered": 26,
+    "wrong_answers": 16,
+    "confident_wrong_rate": 0.3076923076923077,
+    "substitution_rate": 0.038461538461538464,
+    "unstable_cases": 14,
     "judge_unavailable_runs": 0,
+    "answer_runs": 78,
+    "unsafe_sql_runs": 0,
+    "restricted_access_runs": 0,
+    "over_budget_runs": 0,
+    "right_answer_wrong_way": 0,
+    "right_answer_wrong_way_rate": 0.0,
+    "median_rows_scanned": 9499,
+    "max_rows_scanned": 156800,
     "failures_by_owner": {
-      "prompt": 13
+      "prompt": 17
     },
     "failures_by_check": {
-      "result": 5,
-      "sql_rule": 5,
+      "sql_rule": 10,
+      "result": 4,
       "behavior": 3
     },
     "in_sample_best_threshold": "abstain all",
     "holdout": [
       {
         "fold": "A->B",
-        "dev_cases": 14,
-        "test_cases": 14,
-        "threshold": 1.0,
-        "test_cost": 16.0,
-        "test_cost_answer_all": 23.0,
-        "test_coverage": 0.5,
-        "test_wrong": 3
+        "dev_cases": 19,
+        "test_cases": 17,
+        "threshold": Infinity,
+        "test_cost": 12.0,
+        "test_cost_answer_all": 31.0,
+        "test_coverage": 0.0,
+        "test_wrong": 0
       },
       {
         "fold": "B->A",
-        "dev_cases": 14,
-        "test_cases": 14,
+        "dev_cases": 17,
+        "test_cases": 19,
         "threshold": Infinity,
-        "test_cost": 10.0,
-        "test_cost_answer_all": 21,
+        "test_cost": 12.0,
+        "test_cost_answer_all": 24,
         "test_coverage": 0.0,
         "test_wrong": 0
       }
     ],
-    "metamorphic_violations": 15
+    "metamorphic_violations": 20
   }
 }
