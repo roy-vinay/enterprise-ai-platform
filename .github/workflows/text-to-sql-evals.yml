@@ -4,8 +4,8 @@ on:
   pull_request:
     paths: ["evals/text-to-sql/**", ".github/workflows/text-to-sql-evals.yml"]
   push:
-    branches: [main]
-    paths: ["evals/text-to-sql/**"]
+    branches: [main, "ollama-run/**"]   # push to ollama-run/<anything> to evaluate real models
+    paths: ["evals/text-to-sql/**", ".github/workflows/text-to-sql-evals.yml"]
   schedule:
     - cron: "17 9 * * *"   # nightly
   workflow_dispatch:
@@ -21,6 +21,7 @@ defaults:
 
 jobs:
   eval:
+    if: ${{ !startsWith(github.ref_name, 'ollama-run/') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,8 +49,12 @@ jobs:
           path: evals/text-to-sql/reports/latest
 
   ollama:
-    if: github.event_name == 'workflow_dispatch' && inputs.ollama_model != ''
+    if: (github.event_name == 'workflow_dispatch' && inputs.ollama_model != '') || startsWith(github.ref_name, 'ollama-run/')
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJSON(inputs.ollama_model != '' && format('["{0}"]', inputs.ollama_model) || '["qwen2.5-coder:3b","qwen2.5-coder:7b"]') }}
     timeout-minutes: 330   # CPU-only runners are slow; ~200 model calls per run
     steps:
       - uses: actions/checkout@v4
@@ -62,12 +67,12 @@ jobs:
           curl -fsSL https://ollama.com/install.sh | sh
           ollama serve > /tmp/ollama.log 2>&1 &
           sleep 5
-          ollama pull "${{ inputs.ollama_model }}"
+          ollama pull "${{ matrix.model }}"
       - run: python -m t2s_eval.cli build-data
       - name: Evaluate a real model
-        run: python -m t2s_eval.cli run --bot ollama --model "${{ inputs.ollama_model }}" --runs 3 --skip-mutation --out reports/ollama
+        run: python -m t2s_eval.cli run --bot ollama --model "${{ matrix.model }}" --runs 3 --skip-mutation --out reports/ollama
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: text-to-sql-report-ollama
+          name: text-to-sql-report-ollama-${{ strategy.job-index }}
           path: evals/text-to-sql/reports/ollama
