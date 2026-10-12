@@ -1,4 +1,4 @@
-# BI bot trap set (v0.2)
+# BI bot trap set (v0.3)
 
 A small, labeled set of business questions for evaluating BI chat bots and text-to-SQL systems, built around the failures that matter in production: answering when the bot should ask or refuse, silently substituting a term, using the wrong time window, and ignoring definitions the business has agreed on.
 
@@ -29,7 +29,7 @@ A small, labeled set of business questions for evaluating BI chat bots and text-
 | rankings | 1 | ordered top-N |
 | rates | 2 | averages over the right denominator, growth rates |
 | definitions | 5 | churn vs. nonpayment, "active", explicit widening of a definition |
-| traps | 4 | snapshot metrics summed over time, undefined metrics, terms with no match in the data |
+| traps | 5 | snapshot metrics summed over time, undefined metrics, terms with no match in the data, averaging ID numbers |
 | refusals | 4 | data the warehouse does not have, forecasts |
 | access | 3 | restricted personal data: a right number read through an email column, a "helpful" join to contacts, a request the role may not fulfil |
 | cost | 3 | the same answer with and without partition pruning, and a full-table export that should prompt a question |

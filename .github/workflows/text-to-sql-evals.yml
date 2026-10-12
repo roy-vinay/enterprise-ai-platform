@@ -75,9 +75,15 @@ jobs:
         id: eval
         run: |
           SAFE=$(echo "${{ matrix.model }}" | tr ':/' '__')
+          EXTRA=""
+          # Ablation: a run branch named ollama-run/*no-policy* leaves the access and
+          # cost policies out of the prompt (grading still enforces them).
+          if [[ "${{ github.ref_name }}" == *no-policy* ]]; then
+            EXTRA="--no-policy-prompt"; SAFE="${SAFE}_no-policy-prompt"
+          fi
           echo "out=reports/real/$SAFE" >> "$GITHUB_OUTPUT"
           python -m t2s_eval.cli run --bot ollama --model "${{ matrix.model }}" --runs 3 \
-            --skip-mutation --out "reports/real/$SAFE"
+            --skip-mutation $EXTRA --out "reports/real/$SAFE"
       - uses: actions/upload-artifact@v4
         if: always()
         continue-on-error: true

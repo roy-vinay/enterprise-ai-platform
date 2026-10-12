@@ -516,3 +516,43 @@ def test_summary_counts_right_answers_produced_the_wrong_way(env):
     assert s["right_answer_wrong_way"] == 3
     assert s["right_answer_wrong_way_rate"] == 1.0
     assert s["restricted_access_runs"] == 1 and s["over_budget_runs"] == 2
+
+
+# ------------------------------------------- v0.3: ID arithmetic, ablation
+
+@pytest.mark.parametrize("sql,flagged", [
+    ("SELECT AVG(c.contact_id) FROM contacts c", True),
+    ("SELECT SUM(ticket_id) FROM support_tickets", True),
+    ("SELECT AVG(n) FROM (SELECT COUNT(contact_id) n FROM contacts GROUP BY account_id)", False),
+    ("SELECT MAX(ticket_id) FROM support_tickets", False),
+    ("SELECT SUM(mrr_usd) FROM mrr_monthly", False),
+])
+def test_aggregate_of_identifier(env, sql, flagged):
+    model, _, _, _ = env
+    rules_hit = [f.rule for f in rules.check("q", sql, model)]
+    assert ("aggregate_of_identifier" in rules_hit) == flagged
+
+
+def test_identifier_rule_is_reported_before_missing_filters(env):
+    model, _, _, _ = env
+    # The real 7B answer to a01: no test-account filter AND an averaged ID.
+    sql = ("SELECT AVG(contacts.contact_id) FROM accounts JOIN contacts "
+           "ON accounts.account_id = contacts.account_id WHERE accounts.segment = 'Enterprise'")
+    assert rules.check("q", sql, model)[0].rule == "aggregate_of_identifier"
+
+
+def test_policy_ablation_removes_only_the_policies(env):
+    model, _, _, _ = env
+    with_p = semantic.prompt_context(model)
+    without = semantic.prompt_context(model, include_policies=False)
+    assert "Access policy" in with_p and "contacts.email" in with_p
+    assert "Access policy" not in without and "contacts.email" not in without
+    assert "Cost:" not in without
+    assert with_p.startswith(without)   # everything else is identical
+
+
+def test_ablation_bot_has_a_distinct_name(env):
+    model, _, _, _ = env
+    from t2s_eval.bots.ollama import OllamaBot
+    a, b = OllamaBot(model, "m"), OllamaBot(model, "m", policy_prompt=False)
+    assert a.name != b.name and "contacts.email" not in b.system

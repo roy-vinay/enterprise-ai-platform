@@ -23,7 +23,7 @@ from .grade import grade_suite, summarize
 
 
 def _make_bot(kind: str, model: dict, cases: list[dict], profile: str, llm: str,
-              responses: str | None = None):
+              responses: str | None = None, policy_prompt: bool = True):
     if kind == "replay":
         from .bots.replay import ReplayBot
         return ReplayBot(responses)
@@ -31,7 +31,7 @@ def _make_bot(kind: str, model: dict, cases: list[dict], profile: str, llm: str,
         return SimulatedBot(model, cases, profile)
     if kind == "ollama":
         from .bots.ollama import OllamaBot
-        return OllamaBot(model, model=llm)
+        return OllamaBot(model, model=llm, policy_prompt=policy_prompt)
     raise SystemExit(f"unknown bot {kind}")
 
 
@@ -57,7 +57,8 @@ def cmd_run(a):
         labels = [a.model]
     bot_runs = {}
     for label in labels:
-        bot = _make_bot(a.bot, model, cases, label, a.model, responses=label)
+        bot = _make_bot(a.bot, model, cases, label, a.model, responses=label,
+                        policy_prompt=not a.no_policy_prompt)
         if a.bot == "ollama":
             from .bots.replay import RecordingBot
             bot = RecordingBot(bot, out / f"responses-{bot.name.replace(':', '_')}.jsonl")
@@ -196,6 +197,9 @@ def main(argv=None):
     r.add_argument("--runs", type=int, default=5, help="repeats per question (self-consistency)")
     r.add_argument("--abstain-cost", type=float, default=1.0)
     r.add_argument("--llm-judge", action="store_true", help="add the local LLM behavior judge")
+    r.add_argument("--no-policy-prompt", action="store_true",
+                   help="ablation: leave the access and cost policies out of the bot's prompt "
+                        "(grading still enforces them)")
     r.add_argument("--skip-mutation", action="store_true")
     r.add_argument("--semantic-model", default=str(config.MODEL))
     r.add_argument("--out", default=str(config.REPORTS / "latest"))

@@ -31,6 +31,7 @@
     "c26": true,
     "c27": true,
     "c28": true,
+    "c29": true,
     "k01": true,
     "k02": true,
     "k03": true,
@@ -70,6 +71,7 @@
     "p-c18": "holds",
     "p-c19": "holds",
     "p-c28": "holds",
+    "p-c29": "holds",
     "p-k01": "holds",
     "p-k02": "holds"
   }

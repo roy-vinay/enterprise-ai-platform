@@ -51,8 +51,12 @@ def metrics_in(template: str) -> set[str]:
     return {name for kind, name in _PLACEHOLDER.findall(template) if kind != "global"}
 
 
-def prompt_context(model: dict) -> str:
-    """Human-readable model description used in LLM prompts."""
+def prompt_context(model: dict, include_policies: bool = True) -> str:
+    """Human-readable model description used in LLM prompts.
+
+    include_policies=False leaves out the access and cost policies, for the
+    ablation that measures what telling the bot the rules is worth.
+    """
     lines = [f"Today is {model['as_of']} ({model['timezone']}). "
              f"Results are capped at {model['row_cap']} rows.", "", "Metrics:"]
     for name, m in model["metrics"].items():
@@ -64,6 +68,8 @@ def prompt_context(model: dict) -> str:
         lines.append(f"- {name} ({d['source']}): {', '.join(map(str, d['values']))}")
     lines += ["", "Not in the warehouse (refuse these):"]
     lines += [f"- {x}" for x in model.get("not_in_warehouse", [])]
+    if not include_policies:
+        return "\n".join(lines)
     policy = model.get("access_policy") or {}
     if policy:
         lines += ["", f"Access policy (you answer for the role '{policy.get('role', 'analyst')}'):"]
