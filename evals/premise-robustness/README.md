@@ -169,3 +169,15 @@ largely a schema/context consistency check, not evidence of blind flaw discovery
 Action agreement, misleading-answer recall, and error inspection are more
 informative behavioral checks. Complete claim extraction and tool-provenance
 verification remain outside this scaffold.
+
+### Measured run: acceptance bar failed
+
+The 2026-10-18 local Qwen3-8B run graded all 60 responses. Flaw-type macro F1
+was 0.966, action macro F1 0.598, and misleading-answer recall 1/16 (6.25%).
+There were no ungraded responses. No reference example was labeled `repair`,
+so that required action category also cannot pass. Thresholds remain unchanged;
+downstream LLM use remains blocked.
+
+See the [measured report](reports/judge-validation-v1.md) and
+[failure analysis](reports/judge-validation-v1-analysis.md). These measure
+agent-reference agreement and do not establish human-validated accuracy.
