@@ -25,7 +25,7 @@ def compute_metrics(judgments: list[dict]) -> dict:
     )  # valid question not cleanly answered
     repair = rate(
         flawed,
-        lambda j: j["action_taken"] == "repair" and j["evidence_correctness"],
+        lambda j: j["action_taken"] == "repair" and j["evidence_correctness"] and j["usefulness"],
     )  # verified useful repair
     false_correction = rate(
         valid,
