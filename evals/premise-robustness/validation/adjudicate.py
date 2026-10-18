@@ -39,7 +39,7 @@ def compare(first, second):
                          for f in FIELDS}, agreements=agreements, disagreements=disagreements)
 
 
-def adjudicate(a, b, reviewer_a, reviewer_b, *, resolutions=None, resolved_by=None, directory=HERE):
+def adjudicate(a, b, reviewer_a, reviewer_b, *, resolutions=None, resolved_by=None, directory=HERE, protocol="human"):
     directory = Path(directory)
     # Re-running comparison must not leave old gold usable.
     (directory / 'gold.jsonl').unlink(missing_ok=True)
@@ -47,16 +47,20 @@ def adjudicate(a, b, reviewer_a, reviewer_b, *, resolutions=None, resolved_by=No
     ids = [r['response_id'] for r in require_approval(directory)]
     if not reviewer_a.strip() or not reviewer_b.strip() or reviewer_a.strip().casefold() == reviewer_b.strip().casefold():
         raise ValueError('Two distinct named independent reviewers are required')
-    if 'vinay' not in {reviewer_a.strip().casefold(), reviewer_b.strip().casefold()}:
+    if protocol not in {'human', 'agent_reference'}:
+        raise ValueError('Unknown reference protocol')
+    if protocol == 'human' and 'vinay' not in {reviewer_a.strip().casefold(), reviewer_b.strip().casefold()}:
         raise ValueError('One independent reviewer must be Vinay')
     first, second = read_sheet(a, ids), read_sheet(b, ids)
     report = compare(first, second)
     report['reviewers'] = [reviewer_a, reviewer_b]
+    report['protocol'] = protocol
+    report['human_validated'] = protocol == 'human'
     write_json(directory / 'adjudication.json', report)
     pending = set(report['disagreements'])
     if pending and resolutions is None:
         return report
-    if pending and (not resolved_by or resolved_by.strip().casefold() != 'vinay'):
+    if pending and (not resolved_by or (protocol == 'human' and resolved_by.strip().casefold() != 'vinay')):
         raise ValueError('Vinay must explicitly adjudicate disagreements')
     resolved = read_sheet(resolutions, pending) if resolutions else {}
     if set(resolved) != pending:
@@ -65,6 +69,8 @@ def adjudicate(a, b, reviewer_a, reviewer_b, *, resolutions=None, resolved_by=No
     path = directory / 'gold.jsonl'
     path.write_text(''.join(json.dumps(dict(response_id=k, **gold[k]), sort_keys=True) + '\n' for k in ids))
     write_json(directory / 'gold-provenance.json', dict(
+        reference_protocol=protocol, human_validated=protocol == 'human',
+        reference_type='human_adjudicated_reference' if protocol == 'human' else 'agent_generated_reference',
         responses_sha256=sha(directory / 'responses.jsonl'), gold_sha256=sha(path),
         rubric_sha256=sha(HERE.parent / 'RUBRIC.md'),
         reviewer_a=reviewer_a, reviewer_b=reviewer_b,
@@ -80,12 +86,13 @@ def main():
     parser.add_argument('reviewer_b_sheet')
     parser.add_argument('--reviewer-a', required=True)
     parser.add_argument('--reviewer-b', required=True)
+    parser.add_argument('--protocol', choices=['human', 'agent_reference'], default='human')
     parser.add_argument('--resolutions')
     parser.add_argument('--resolved-by')
     args = parser.parse_args()
     try:
         report = adjudicate(args.reviewer_a_sheet, args.reviewer_b_sheet,
-            args.reviewer_a, args.reviewer_b, resolutions=args.resolutions, resolved_by=args.resolved_by)
+            args.reviewer_a, args.reviewer_b, resolutions=args.resolutions, resolved_by=args.resolved_by, protocol=args.protocol)
     except (ValueError, OSError, KeyError) as exc:
         parser.exit(2, f'Adjudication blocked: {exc}\n')
     print(json.dumps(report, indent=2))
