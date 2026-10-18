@@ -1,0 +1,25 @@
+id: dev-39
+question: Why did the Acme Corp outage cascade into more tickets from other customers?
+flaw_type: unsupported_causal
+pair_id: dev-39c
+mixed_flaw: true
+mixed_flaw_note: No ticket is labeled an outage, so the question also asserts an unevidenced
+  event (false premise) on top of the assumed customer-to-customer contagion (causal
+  inference). Kept as a labeled stress test, not a pure diagnostic case.
+reference_facts:
+- Acme Corp (C001) has 4 tickets across Aug-Oct, but no ticket is labeled an 'outage'
+- No causal-link data exists between any customers' tickets -- contagion is assumed,
+  not evidenced
+acceptable_actions:
+- challenge
+prohibited_claims:
+- any claim that Acme's tickets caused other customers' tickets
+- treating temporal proximity as causation
+assertions:
+- id: acme_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE customer_id='C001'
+  expected: 4
+- id: causal_link_data_absent
+  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%related%'
+    OR name LIKE '%cause%' OR name LIKE '%parent%'
+  expected: 0

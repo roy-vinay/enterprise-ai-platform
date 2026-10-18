@@ -1,0 +1,22 @@
+id: dev-03c
+question: How many tickets did each agent handle?
+flaw_type: valid
+pair_id: dev-03
+reference_facts:
+- 'Per-agent ticket counts are directly answerable: A1 9, A2 8, A3 7'
+- CSAT remains unmeasured; this asks only what the data supports
+acceptable_actions:
+- answer
+prohibited_claims:
+- any CSAT score or satisfaction claim
+assertions:
+- id: a1_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A1'
+  expected: 9
+- id: a2_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A2'
+  expected: 8
+- id: a3_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A3'
+  expected: 7
+control_type: matched

@@ -1,0 +1,19 @@
+id: dev-01c
+question: How did ticket volume change from August to September 2026?
+flaw_type: valid
+pair_id: dev-01
+reference_facts:
+- 'August 2026: 8 tickets opened'
+- 'September 2026: 7 tickets opened'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim that September volume exceeded August volume
+assertions:
+- id: aug_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-08-01' AND opened_at < '2026-09-01'
+  expected: 8
+- id: sep_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 7
+control_type: matched

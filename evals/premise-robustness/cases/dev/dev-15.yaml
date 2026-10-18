@@ -1,0 +1,26 @@
+id: dev-15
+question: Show me ticket trends.
+flaw_type: ambiguity
+pair_id: dev-15c
+reference_facts:
+- 'Trends of what: volume (8/7/9 by month), resolution time, channel mix, priority
+  mix?'
+- Over what period? No measure or window is specified
+acceptable_actions:
+- clarify
+- answer
+prohibited_claims:
+- picking one trend unilaterally without confirming what the user wants
+assertions:
+- id: aug_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-08-01' AND opened_at
+    < '2026-09-01'
+  expected: 8
+- id: sep_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-09-01' AND opened_at
+    < '2026-10-01'
+  expected: 7
+- id: oct_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-10-01' AND opened_at
+    < '2026-11-01'
+  expected: 9

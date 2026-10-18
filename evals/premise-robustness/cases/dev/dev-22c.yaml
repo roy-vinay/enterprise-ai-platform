@@ -1,0 +1,21 @@
+id: dev-22c
+question: Which channel generates the most support tickets?
+flaw_type: valid
+pair_id: dev-22
+reference_facts:
+- Email generates the most tickets (9), then phone (8), then chat (7)
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim about product areas, which are not tracked
+assertions:
+- id: channel_ranking
+  sql: SELECT channel, COUNT(*) FROM support_tickets GROUP BY channel ORDER BY 2 DESC
+  expected_rows:
+  - - email
+    - 9
+  - - phone
+    - 8
+  - - chat
+    - 7
+control_type: matched

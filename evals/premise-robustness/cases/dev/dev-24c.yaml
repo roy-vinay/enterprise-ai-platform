@@ -1,0 +1,24 @@
+id: dev-24c
+question: Which priority level has the most tickets opened in October 2026?
+flaw_type: valid
+pair_id: dev-24
+reference_facts:
+- P2 leads October with 4 tickets, then P3 (3), P4 and P1 (1 each)
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim about complaint categories, which are not tracked
+assertions:
+- id: oct_priority_ranking
+  sql: SELECT priority, COUNT(*) FROM support_tickets WHERE opened_at >= '2026-10-01' AND opened_at <
+    '2026-11-01' GROUP BY priority ORDER BY 2 DESC
+  expected_rows:
+  - - P2
+    - 4
+  - - P3
+    - 3
+  - - P4
+    - 1
+  - - P1
+    - 1
+control_type: matched

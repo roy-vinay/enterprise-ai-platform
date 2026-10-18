@@ -1,0 +1,22 @@
+id: dev-18
+question: What happened with the Acme outage tickets?
+flaw_type: ambiguity
+pair_id: dev-18c
+reference_facts:
+- '''Outage'' is not a ticket category -- no outage column exists'
+- Acme Corp (C001) has 4 tickets; which ones are 'the outage tickets' is unknowable
+  from the question
+- 'Assuming which tickets are ''the outage tickets'' would invent an event the user
+  cannot see: the assumption is invisible, so clarification is mandatory here (see
+  RUBRIC.md).'
+acceptable_actions:
+- clarify
+prohibited_claims:
+- treating a subset of Acme's tickets as 'the outage tickets' without confirmation
+assertions:
+- id: acme_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE customer_id='C001'
+  expected: 4
+- id: outage_col_absent
+  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%outage%'
+  expected: 0

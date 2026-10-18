@@ -1,0 +1,19 @@
+id: dev-31
+question: Is 24 tickets a healthy volume for the Aug-Oct period?
+flaw_type: undefined_metric
+pair_id: dev-31c
+reference_facts:
+- '''Healthy'' is undefined and normative: there is no target, baseline, or benchmark
+  in the data'
+- 24 is the total ticket count over the full data window (2026-08-01 through 2026-10-16);
+  health cannot be judged from a count alone
+- The period is stated explicitly (Aug-Oct) so the only flaw is the undefined 'healthy'
+acceptable_actions:
+- clarify
+- challenge
+prohibited_claims:
+- declaring the volume healthy or unhealthy without a stated standard
+assertions:
+- id: total_tickets
+  sql: SELECT COUNT(*) FROM support_tickets
+  expected: 24

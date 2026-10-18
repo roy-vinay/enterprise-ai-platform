@@ -1,0 +1,17 @@
+id: dev-22
+question: Which product area generates the most support tickets?
+flaw_type: unavailable_evidence
+pair_id: dev-22c
+reference_facts:
+- No product-area column exists on any table -- tickets cannot be attributed to product
+  areas
+acceptable_actions:
+- abstain
+- clarify
+prohibited_claims:
+- any product-area ranking
+- inventing product areas from ticket message text (only 3 tickets have messages)
+assertions:
+- id: product_col_absent
+  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%product%'
+  expected: 0

@@ -1,0 +1,22 @@
+id: dev-45
+question: How many tickets came through each channel in September 2026?
+flaw_type: valid
+reference_facts:
+- 'September by channel: chat 2, email 3, phone 2'
+acceptable_actions:
+- answer
+prohibited_claims:
+- using all-time channel totals instead of September's
+assertions:
+- id: sep_chat
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='chat' AND opened_at >=
+    '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 2
+- id: sep_email
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='email' AND opened_at >=
+    '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 3
+- id: sep_phone
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
+    '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 2

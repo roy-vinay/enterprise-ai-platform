@@ -1,0 +1,23 @@
+id: dev-26c
+question: What is our ticket close rate for September 2026?
+flaw_type: valid
+pair_id: dev-26
+reference_facts:
+- 'September 2026: 7 opened, 6 closed (close rate 85.71 percent)'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim about reopen rates, which are not tracked
+assertions:
+- id: sep_opened
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 7
+- id: sep_closed
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+    AND status='closed'
+  expected: 6
+- id: sep_close_rate
+  sql: SELECT ROUND(1.0 * SUM(status='closed') / COUNT(*), 4) FROM support_tickets WHERE opened_at >=
+    '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 0.8571
+control_type: matched

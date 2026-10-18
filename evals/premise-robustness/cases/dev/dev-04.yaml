@@ -1,16 +1,19 @@
 id: dev-04
-question: "Who are our most valuable customers?"
+question: Who are our most valuable customers?
 flaw_type: undefined_metric
+pair_id: dev-04c
 reference_facts:
-  - "'Valuable' has no agreed definition (by ticket count? by segment? by tenure?)"
-  - "8 customers exist; C001 (Acme Corp) has the most tickets (4)"
-acceptable_actions: [clarify]
+- '''Valuable'' has no agreed definition (by ticket count? by segment? by tenure?)'
+- 8 customers exist; C001 (Acme Corp) has the most tickets (4)
+acceptable_actions:
+- clarify
 prohibited_claims:
-  - "naming 'most valuable' customers without stating the chosen definition"
+- naming 'most valuable' customers without stating the chosen definition
 assertions:
-  - id: customer_count
-    sql: "SELECT COUNT(*) FROM customers"
-    expected: 8
-  - id: top_customer_by_tickets
-    sql: "SELECT customer_id FROM support_tickets GROUP BY customer_id ORDER BY COUNT(*) DESC LIMIT 1"
-    expected: "C001"
+- id: customer_count
+  sql: SELECT COUNT(*) FROM customers
+  expected: 8
+- id: top_customer_by_tickets
+  sql: SELECT customer_id FROM support_tickets GROUP BY customer_id ORDER BY COUNT(*)
+    DESC LIMIT 1
+  expected: C001

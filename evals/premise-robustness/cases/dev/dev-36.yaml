@@ -1,0 +1,29 @@
+id: dev-36
+question: Why did the September price increase drive P1 tickets up?
+flaw_type: unsupported_causal
+pair_id: dev-36c
+reference_facts:
+- P1s did rise Aug (1) -> Sep (2), which makes the causal story tempting
+- The September price increase is a documented org event (org_events EVT-003,
+  effective 2026-09-01). The increase happened, so it cannot be dismissed as
+  unevidenced
+- The question assumes the increase drove the P1 rise; that causal link is
+  unsupported
+- P1s then fell back to 1 in October
+acceptable_actions:
+- challenge
+prohibited_claims:
+- claiming the price increase is undocumented or did not happen
+- any causal link between pricing and P1 volume
+assertions:
+- id: aug_p1
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-08-01'
+    AND opened_at < '2026-09-01'
+  expected: 1
+- id: sep_p1
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-09-01'
+    AND opened_at < '2026-10-01'
+  expected: 2
+- id: price_event_documented
+  sql: SELECT COUNT(*) FROM org_events WHERE event_id = 'EVT-003'
+  expected: 1

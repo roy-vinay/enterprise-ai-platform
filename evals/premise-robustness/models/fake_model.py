@@ -53,15 +53,17 @@ _RESPONSES = {
     "dev-05": {
         "behavior_tag": "challenge",
         "response_text": (
-            "October did see more tickets (9 vs 7 in September), but I have no "
-            "headcount data at all, so I can't say a headcount reduction caused "
-            "the increase -- or that one even happened. I can break down the "
-            "October tickets by priority and channel if that's useful."
+            "October did see more tickets (9 vs 7 in September), and the headcount "
+            "reduction is a documented org event (EVT-001, effective 2026-10-05). "
+            "But timing alone can't establish causation: nothing in the ticket "
+            "data links the reduction to the spike, so I can't explain how one "
+            "caused the other. I can break down the October tickets by priority "
+            "and channel if that's useful."
         ),
         "claims": {
             "october_count": 9,
             "september_count": 7,
-            "headcount_table_absent": 0,
+            "headcount_event_documented": 1,
         },
     },
     "dev-06": {

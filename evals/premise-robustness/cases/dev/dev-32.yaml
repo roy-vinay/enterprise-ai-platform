@@ -1,0 +1,25 @@
+id: dev-32
+question: Rank our customers by support burden.
+flaw_type: undefined_metric
+pair_id: dev-32c
+reference_facts:
+- '''Burden'' is undefined and the readings diverge:'
+- by ticket count C001 leads (4 tickets); by total resolution minutes C004 leads (7335
+  min)
+acceptable_actions:
+- clarify
+prohibited_claims:
+- ranking by burden without stating the chosen measure
+assertions:
+- id: top_by_count
+  sql: SELECT customer_id FROM support_tickets GROUP BY customer_id ORDER BY COUNT(*)
+    DESC LIMIT 1
+  expected: C001
+- id: top_by_minutes
+  sql: SELECT customer_id FROM support_tickets WHERE status='closed' GROUP BY customer_id
+    ORDER BY SUM(resolution_minutes) DESC LIMIT 1
+  expected: C004
+- id: c004_minutes
+  sql: SELECT SUM(resolution_minutes) FROM support_tickets WHERE customer_id='C004'
+    AND status='closed'
+  expected: 7335

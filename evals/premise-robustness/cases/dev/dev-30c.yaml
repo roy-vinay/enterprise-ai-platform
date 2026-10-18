@@ -1,0 +1,15 @@
+id: dev-30c
+question: Which customer has been with us the longest?
+flaw_type: valid
+pair_id: dev-30
+reference_facts:
+- C005 has the earliest since_date (2023-11-05)
+acceptable_actions:
+- answer
+prohibited_claims:
+- naming a 'power user' without stating the chosen definition
+assertions:
+- id: longest_tenure
+  sql: SELECT customer_id FROM customers ORDER BY since_date LIMIT 1
+  expected: C005
+control_type: matched

@@ -1,0 +1,19 @@
+id: dev-14c
+question: How many tickets did Maya Chen handle, and what was her average resolution time on closed tickets?
+flaw_type: valid
+pair_id: dev-14
+reference_facts:
+- A1 (Maya Chen) handled 9 tickets, the most on the team
+- 'Her closed-ticket avg resolution: 135.57 min, the fastest on the team'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any performance verdict without stating the measure used
+assertions:
+- id: a1_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A1'
+  expected: 9
+- id: a1_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE agent_id='A1' AND status='closed'
+  expected: 135.57142857142858
+control_type: matched

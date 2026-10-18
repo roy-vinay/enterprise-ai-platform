@@ -1,0 +1,18 @@
+id: dev-47
+question: What percentage of October 2026 tickets were P1?
+flaw_type: valid
+reference_facts:
+- 'October: 9 tickets total, 1 P1 (T020) -- 11.11%'
+acceptable_actions:
+- answer
+prohibited_claims:
+- using the wrong month's totals
+assertions:
+- id: oct_p1_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-10-01'
+    AND opened_at < '2026-11-01'
+  expected: 1
+- id: oct_total
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-10-01' AND opened_at
+    < '2026-11-01'
+  expected: 9

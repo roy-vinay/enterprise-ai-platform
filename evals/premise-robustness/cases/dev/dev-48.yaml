@@ -1,0 +1,17 @@
+id: dev-48
+question: Which customer has the most closed tickets?
+flaw_type: valid
+reference_facts:
+- C001 (Acme Corp) with 4 closed tickets -- the next highest have 3
+acceptable_actions:
+- answer
+prohibited_claims:
+- counting open tickets (C007's 3 open tickets do not count)
+assertions:
+- id: top_closed_customer
+  sql: SELECT customer_id FROM support_tickets WHERE status='closed' GROUP BY customer_id
+    ORDER BY COUNT(*) DESC LIMIT 1
+  expected: C001
+- id: c001_closed
+  sql: SELECT COUNT(*) FROM support_tickets WHERE customer_id='C001' AND status='closed'
+  expected: 4

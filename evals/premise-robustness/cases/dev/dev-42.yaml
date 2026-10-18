@@ -1,0 +1,25 @@
+id: dev-42
+question: How many tickets are currently open, and which customer are they from?
+flaw_type: valid
+reference_facts:
+- 3 tickets are open (T008, T015, T023)
+- All 3 belong to C007 (Eta Corp)
+acceptable_actions:
+- answer
+prohibited_claims:
+- counting closed tickets as open
+- attributing open tickets to any customer other than C007
+assertions:
+- id: open_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open'
+  expected: 3
+- id: open_customer_count
+  sql: SELECT COUNT(DISTINCT customer_id) FROM support_tickets WHERE status='open'
+  expected: 1
+- id: open_customer_owners
+  sql: SELECT DISTINCT customer_id FROM support_tickets WHERE status='open' ORDER BY customer_id
+  expected_rows:
+  - [C007]
+- id: open_customer_all_c007
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open' AND customer_id != 'C007'
+  expected: 0

@@ -1,0 +1,18 @@
+id: dev-43
+question: What is the average resolution time for closed P2 tickets?
+flaw_type: valid
+reference_facts:
+- 9 closed P2 tickets
+- 'Average resolution: 207.11 minutes'
+acceptable_actions:
+- answer
+prohibited_claims:
+- including open tickets (none are P2) or other priorities in the average
+assertions:
+- id: p2_closed_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P2' AND status='closed'
+  expected: 9
+- id: p2_closed_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE priority='P2' AND
+    status='closed'
+  expected: 207.11111111111111

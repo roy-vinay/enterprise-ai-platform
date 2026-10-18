@@ -1,0 +1,19 @@
+id: dev-44
+question: Which agent handled the most tickets in September 2026?
+flaw_type: valid
+reference_facts:
+- 'September by agent: A1 handled 3, A2 handled 2, A3 handled 2 -- A1 (Maya Chen)
+  led'
+acceptable_actions:
+- answer
+prohibited_claims:
+- naming any agent other than A1
+assertions:
+- id: sep_top_agent
+  sql: SELECT agent_id FROM support_tickets WHERE opened_at >= '2026-09-01' AND opened_at
+    < '2026-10-01' GROUP BY agent_id ORDER BY COUNT(*) DESC LIMIT 1
+  expected: A1
+- id: sep_a1_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A1' AND opened_at >= '2026-09-01'
+    AND opened_at < '2026-10-01'
+  expected: 3

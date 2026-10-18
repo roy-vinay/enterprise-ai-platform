@@ -1,88 +1,76 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/masthead-dark.svg">
-  <img src="assets/masthead-light.svg" width="100%" alt="Premise Robustness — Correct SQL starts with a sound question. Scripted prototype with six development cases, synthetic data, and no API keys.">
-</picture>
+# Premise-robustness eval
 
-# Premise robustness for BI assistants
+> **Research question:** Can evidence-backed premise checking reduce misleading BI answers without making the assistant frustratingly cautious?
 
-Can evidence-backed premise checking reduce misleading answers without making a BI assistant frustratingly cautious?
+Text-to-SQL benchmarks measure whether the SQL is correct. They don't measure whether the *question* deserved an answer. This eval measures what happens when a BI assistant is asked a question with a flawed premise -- a false claim, an ambiguity, missing evidence, an undefined metric, or an assumed causal conclusion -- and whether it answers, clarifies, challenges, repairs, or abstains.
 
-**Status: executable scaffold.** Six individual development cases, a scripted model, and a stub judge. This is a pipeline demonstration, not a model evaluation. No performance findings have been established.
+## Current state (milestone 2)
 
-[Run locally](#run-locally) · [Explore the cases](cases/dev) · [Research plan](PRD.md) · [Report format](reports/README.md)
+An executable end-to-end pipeline on a small deterministic synthetic
+customer-support dataset (24 tickets, Aug-Oct 2026), with **no real models**:
 
-## The failure we want to measure
+- `datasets/support/` -- schema + deterministic seed (monthly volumes are deliberate: Aug 8, Sep 7, Oct 9)
+- `cases/dev/` -- **90 cases** as YAML: 40 flawed questions (8 per flaw type), each with a
+  minimally-different **valid control** (`pair_id` links both directions), plus 10
+  standalone valid questions. Every case carries reference facts, acceptable/prohibited
+  claims, and executable SQL assertions
+- `RUBRIC.md` -- grading principles: the disclosed-assumption rule for ambiguity, partial-evidence
+  grading, mixed-flaw labeling, and time semantics (reference date 2026-10-18)
+- `premise_eval/` -- runner, read-only model connections with query budgets, a **verification**
+  stage (deterministic SQL assertions, including result-set comparison) kept separate from a
+  **judging** stage (behavioral assessment; currently a stub for milestone 3)
+- `models/fake_model.py` -- scripted test double demonstrating the intended behavior per case
+- `prompts/` -- the three experimental arms (ordinary / critique / evidence-backed), versioned
+- `cases/heldout/` -- placeholder manifest; held-out runs are refused until the set is authored
+  in a separate pass and the manifest is frozen
 
-> **User:** “Why did ticket volume spike in September after the support reorg?”
->
-> **Useful response:** “September had 7 tickets, compared with 8 in August. Volume fell rather than spiked. This dataset contains no evidence about a reorganization.”
+> **Evaluation scope:** only the 6 thin-slice cases (dev-01 through dev-06) run end to end
+> through the fake-model smoke test. All other cases currently receive **assertion checks
+> only** (their ground truth is verified against the seeded DB); they are not run through
+> any assistant until the LLM judge exists (milestone 3). The metrics in `reports/` therefore
+> describe the 6-case smoke run, not the full set.
 
-A query can execute correctly while the answer accepts a false premise. This lab separates **what the data establishes** from **how the assistant responds**: answer, clarify, challenge, repair, or abstain.
-
-## Five ways a question can go wrong
-
-| Failure type | Example | Appropriate direction |
-|---|---|---|
-| False premise | Explain a ticket spike that did not happen. | Check the trend; challenge or correct the premise. |
-| Ambiguity | Average resolution time “last quarter,” with no reference date. | Clarify the missing context. |
-| Unavailable evidence | CSAT by agent when no satisfaction evidence is available. | Explain the limitation; request the missing evidence. |
-| Undefined metric | Rank the “most valuable” customers. | Agree on a measurable definition first. |
-| Unsupported causation | Explain how a headcount reduction caused the increase. | Separate observed changes from an unestablished cause. |
-
-A sixth, valid question checks that a reasonable request can still be answered. These are **six cases, not six matched pairs**; paired controls arrive with the expanded dataset.
-
-## Run locally
-
-Python 3.10+ recommended. From the repository root:
+## Quickstart
 
 ```bash
 cd evals/premise-robustness
-python3 -m venv .venv
-source .venv/bin/activate
-make setup
-make seed-db
-make test
-make run-dev
+make setup     # pip install -r requirements.txt
+make seed-db   # build data/support.db from datasets/support/
+make test      # pytest: case assertions + end-to-end smoke run
+make run-dev   # fake-model run over cases/dev, JSON report to reports/
 ```
 
-The fixture has **24 tickets, 8 customers, and 3 agents**, with August/September/October ticket counts of **8 / 7 / 9**. Reports are written to `reports/report-*.json` and excluded from Git.
+`make run-heldout` refuses while the held-out manifest is a placeholder.
+`make judge-validate` and `make report` are milestone 3 / 7 placeholders.
 
-## What the demo proves
+## What this defers
 
-| Implemented | Still required before research claims |
-|---|---|
-| Deterministic support dataset and SQL ground-truth checks | Reviewed matched cases and a separate held-out set |
-| Read-only SQL connections and a query-count budget | Real model adapters and recorded tool trajectories |
-| Scripted responses → declared-claim verification → stub judge → metrics | Independent behavioral judge and human validation |
-| Reported response text, input hashes, and smoke-test labels | Verification of all response claims and their evidence provenance |
-| Frozen-manifest content checks for held-out readiness | Independent held-out authoring and review |
+- AdventureWorks as a second dataset (milestone 6 -- after the harness is proven)
+- Scaling to 50 dev pairs (milestone 2)
+- The LLM judge + two-reviewer validation protocol (milestone 3; `judge.py` is a clearly labeled stub)
+- Held-out authoring (milestone 4)
+- Real model runs: Qwen3-8B via Ollama, then frontier APIs (milestone 5)
+- The cost-framework report (milestone 7)
 
-**Important limits:** the fake model does not execute SQL tools or consume the three prompt arms. Choosing an arm only changes its report label. The verifier checks declared assertion/value pairs; it does not establish that the model queried the database, nor detect every unsupported claim in prose. An empty claim map passes vacuously. The stub receives the case's true flaw type and assumes usefulness. Its metrics test plumbing, not assistant quality.
+## Layout
 
-## Experimental design
+```
+evals/premise-robustness/
+  README.md  PRD.md  RUBRIC.md  Makefile  requirements.txt
+  datasets/support/      schema.sql, seed.sql (deterministic)
+                         customers, agents, support_tickets, ticket_messages,
+                         org_events (documented business events: headcount,
+                         product, pricing, policy, expansion)
+  cases/dev/             90 YAML cases: 40 flawed + 40 valid controls
+                         (pair_id, bidirectional; control_type matched/related)
+                         + 10 standalone valid
+  cases/heldout/         README + placeholder manifest.json
+  prompts/               arm-ordinary/critique/evidence.md (versioned)
+  premise_eval/          db, runner, verify, judge (stub), metrics, versions
+  models/                fake_model.py (test double)
+  tests/                 test_assertions.py, test_smoke.py, test_regressions.py
+  reports/               JSON run reports (gitignored); every report records
+                         dataset, prompt, model, and case-set versions
+```
 
-The planned comparison holds models, tools, and budgets fixed across **ordinary assistance**, **critique prompting**, and **evidence-backed premise checking**. Prompt files are present; runtime enforcement of the evidence mechanism is future work.
-
-The outcome measures cover misleading answers, unnecessary interventions, useful repairs, false corrections, and valid-task completion. Useful repairs must be factually supported **and** useful. Future publication runs require held-out results, uncertainty estimates, and a validated judge.
-
-## Project map
-
-| Location | Purpose |
-|---|---|
-| [`datasets/support/`](datasets/support) | Schema and deterministic fixture |
-| [`cases/dev/`](cases/dev) | Questions, reference facts, acceptable actions, SQL assertions |
-| [`cases/heldout/`](cases/heldout) | Placeholder manifest; runs currently refused |
-| [`premise_eval/`](premise_eval) | Runner, database access, verification, judge, metrics |
-| [`models/`](models) / [`prompts/`](prompts) | Scripted model and planned prompt arms |
-| [`tests/`](tests) | Ground-truth, pipeline, and isolation regressions |
-| [`reports/`](reports) | Local JSON outputs and interpretation guide |
-
-`make run-heldout` refuses until a nonempty manifest is frozen and its case IDs, paths, and SHA-256 hashes match every held-out YAML file. This catches accidental changes; it does not prevent authors from reading files or provide an adversarial security boundary. Real held-out runs remain deferred until model and judge support exists.
-
-`make judge-validate` and `make report` are roadmap placeholders, not validation commands.
-
-## Research foundation
-
-Inspired by [PremiseSQL: Evaluating Premise Critique and Abstention in Text-to-SQL Systems](https://arxiv.org/abs/2610.22158). This project explores an applied response framework and evidence-backed checks; it does not claim to reproduce the paper or establish a novel first.
-
-See the [versioned PRD snapshot](PRD.md) for the broader plan. Its canonical source location is unresolved in this scaffold; reconcile the snapshot before treating it as authoritative.
+See `PRD.md` (versioned snapshot; the canonical PRD collection is the source of truth) for the full design.

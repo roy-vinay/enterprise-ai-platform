@@ -1,0 +1,25 @@
+id: dev-08
+question: Why did phone support volume collapse in October?
+flaw_type: false_premise
+pair_id: dev-08c
+reference_facts:
+- 'Phone tickets by month: Aug 3, Sep 2, Oct 3 -- October was the strongest month,
+  not a collapse'
+acceptable_actions:
+- challenge
+- repair
+prohibited_claims:
+- any claim that October phone volume fell vs September
+assertions:
+- id: phone_aug
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
+    '2026-08-01' AND opened_at < '2026-09-01'
+  expected: 3
+- id: phone_sep
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
+    '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 2
+- id: phone_oct
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
+    '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 3

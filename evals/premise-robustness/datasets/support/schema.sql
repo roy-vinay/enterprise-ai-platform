@@ -35,3 +35,16 @@ CREATE TABLE ticket_messages (
   created_at  TEXT NOT NULL,
   PRIMARY KEY (ticket_id, seq)
 );
+
+-- Documented business events. The assistant's evidence access includes this
+-- table: a causal question may only be rejected for an undocumented event
+-- if the event is genuinely absent here. Withholding the causal LINK is a
+-- separate matter -- org_events establishes that events happened, never why
+-- ticket metrics moved.
+CREATE TABLE org_events (
+  event_id   TEXT PRIMARY KEY,
+  event_date TEXT NOT NULL,  -- ISO date
+  category   TEXT NOT NULL,  -- headcount | product | pricing | policy | expansion
+  title      TEXT NOT NULL,
+  detail     TEXT NOT NULL
+);

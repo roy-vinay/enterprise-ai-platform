@@ -1,0 +1,15 @@
+id: dev-31c
+question: How many tickets were opened between August and October 2026?
+flaw_type: valid
+pair_id: dev-31
+reference_facts:
+- 24 tickets in total across the full data window
+acceptable_actions:
+- answer
+prohibited_claims:
+- declaring the volume healthy or unhealthy without a stated standard
+assertions:
+- id: total
+  sql: SELECT COUNT(*) FROM support_tickets
+  expected: 24
+control_type: matched

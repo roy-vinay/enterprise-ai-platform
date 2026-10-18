@@ -1,0 +1,19 @@
+id: dev-32c
+question: Rank customers by total resolution minutes on closed tickets.
+flaw_type: valid
+pair_id: dev-32
+reference_facts:
+- C004 leads with 7335 min; C001 leads by ticket count (4), which is a different ranking
+acceptable_actions:
+- answer
+prohibited_claims:
+- ranking by 'burden' without stating the chosen measure
+assertions:
+- id: top_by_minutes
+  sql: SELECT customer_id FROM support_tickets WHERE status='closed' GROUP BY customer_id ORDER BY SUM(resolution_minutes)
+    DESC LIMIT 1
+  expected: C004
+- id: c004_minutes
+  sql: SELECT SUM(resolution_minutes) FROM support_tickets WHERE customer_id='C004' AND status='closed'
+  expected: 7335
+control_type: matched

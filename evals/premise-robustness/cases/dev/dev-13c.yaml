@@ -1,0 +1,24 @@
+id: dev-13c
+question: How did the number of P1 tickets change month over month from August to October 2026?
+flaw_type: valid
+pair_id: dev-13
+reference_facts:
+- 'P1 tickets: Aug 1, Sep 2, Oct 1 (rose then fell)'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim of a monotonic monthly increase
+assertions:
+- id: p1_aug
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-08-01' AND opened_at
+    < '2026-09-01'
+  expected: 1
+- id: p1_sep
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-09-01' AND opened_at
+    < '2026-10-01'
+  expected: 2
+- id: p1_oct
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-10-01' AND opened_at
+    < '2026-11-01'
+  expected: 1
+control_type: matched

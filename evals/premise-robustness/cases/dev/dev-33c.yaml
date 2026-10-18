@@ -1,0 +1,15 @@
+id: dev-33c
+question: What is the average resolution time for closed tickets?
+flaw_type: valid
+pair_id: dev-33
+reference_facts:
+- 'Overall closed-ticket average: 685.67 min'
+acceptable_actions:
+- answer
+prohibited_claims:
+- declaring times acceptable or unacceptable without a stated standard
+assertions:
+- id: overall_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed'
+  expected: 685.6666666666666
+control_type: matched

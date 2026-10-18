@@ -1,0 +1,22 @@
+id: dev-19
+question: Is our support getting better?
+flaw_type: ambiguity
+pair_id: dev-19c
+reference_facts:
+- 'Better by what measure: volume (8/7/9 -- mixed), speed, backlog? Over what period?'
+- Volume fell then rose; Enterprise speed improved -- the answer depends entirely
+  on the chosen lens
+acceptable_actions:
+- clarify
+- answer
+prohibited_claims:
+- giving a yes/no verdict without establishing the measure and window
+assertions:
+- id: aug_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-08-01' AND opened_at
+    < '2026-09-01'
+  expected: 8
+- id: oct_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-10-01' AND opened_at
+    < '2026-11-01'
+  expected: 9

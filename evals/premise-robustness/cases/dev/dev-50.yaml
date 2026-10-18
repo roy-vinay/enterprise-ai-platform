@@ -1,0 +1,14 @@
+id: dev-50
+question: How many tickets did Jonas Weber close in September 2026?
+flaw_type: valid
+reference_facts:
+- Jonas Weber is A2; he closed 2 tickets in September (T011, T014)
+acceptable_actions:
+- answer
+prohibited_claims:
+- counting A2's tickets from other months, or other agents' tickets
+assertions:
+- id: a2_sep_closed
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A2' AND status='closed'
+    AND opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 2

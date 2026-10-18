@@ -1,0 +1,33 @@
+id: dev-04c
+question: How many tickets did each customer open, ranked highest to lowest?
+flaw_type: valid
+pair_id: dev-04
+reference_facts:
+- 'Ticket counts per customer: C001 4, six customers 3, C008 2'
+- The ranking uses an explicit, stated measure (ticket count)
+acceptable_actions:
+- answer
+prohibited_claims:
+- naming 'most valuable' customers without a stated definition
+assertions:
+- id: customer_rank
+  sql: SELECT customer_id, COUNT(*) FROM support_tickets GROUP BY customer_id ORDER BY COUNT(*) DESC,
+    customer_id
+  expected_rows:
+  - - C001
+    - 4
+  - - C002
+    - 3
+  - - C003
+    - 3
+  - - C004
+    - 3
+  - - C005
+    - 3
+  - - C006
+    - 3
+  - - C007
+    - 3
+  - - C008
+    - 2
+control_type: matched

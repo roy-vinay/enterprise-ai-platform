@@ -32,6 +32,14 @@ class HeldoutNotReadyError(Exception):
     pass
 
 
+# The thin-slice fake model is scripted for exactly these six cases; it is a
+# pipeline fixture, not a research model. Fake-model runs default to this set
+# so the scripted smoke test stays pinned to the original 6 cases even as the
+# dev set grows. Real-model runs (milestone 5) pass case_ids explicitly or run
+# the full split.
+FAKE_MODEL_CASE_IDS = [f"dev-{i:02d}" for i in range(1, 7)]
+
+
 def load_cases(split: str) -> list[dict]:
     if split not in {"dev", "heldout"}:
         raise ValueError(f"unknown split: {split!r}")
@@ -79,19 +87,34 @@ def check_heldout_ready() -> None:
         raise HeldoutNotReadyError("manifest must cover every held-out YAML case exactly once")
 
 
-def run(split: str, model_name: str, arm: str, db_path: Path | str) -> dict:
+def run(
+    split: str,
+    model_name: str,
+    arm: str,
+    db_path: Path | str,
+    case_ids: list[str] | None = None,
+) -> dict:
     if split == "heldout":
         check_heldout_ready()
     if model_name != "fake":
         raise ValueError(f"thin slice supports only the fake model, got {model_name!r}")
     if arm not in versions.PROMPT_VERSIONS:
         raise ValueError(f"unknown arm: {arm!r}")
+    if case_ids is None and model_name == "fake":
+        # Pin the scripted fixture to its six cases; the dev set may be larger.
+        case_ids = FAKE_MODEL_CASE_IDS
 
     # Local import so premise_eval stays importable without the models dir.
     sys.path.insert(0, str(PKG_ROOT / "models"))
     import fake_model  # noqa: E402
 
     cases = load_cases(split)
+    if case_ids is not None:
+        wanted = set(case_ids)
+        cases = [c for c in cases if c["id"] in wanted]
+        missing = wanted - {c["id"] for c in cases}
+        if missing:
+            raise ValueError(f"case ids not found in {split} split: {sorted(missing)}")
     con = db_mod.verification_connection(db_path)
     judgments = []
     case_results = []
@@ -103,6 +126,7 @@ def run(split: str, model_name: str, arm: str, db_path: Path | str) -> dict:
             judgment = judge_mod.judge_stub(
                 case, response["behavior_tag"], claim_check["passed"]
             )
+            judgment["case_id"] = case["id"]
             judgments.append(judgment)
             case_results.append(
                 {

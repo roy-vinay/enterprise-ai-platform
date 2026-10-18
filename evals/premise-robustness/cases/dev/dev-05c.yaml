@@ -1,0 +1,19 @@
+id: dev-05c
+question: How many tickets were opened in September and October 2026?
+flaw_type: valid
+pair_id: dev-05
+reference_facts:
+- 'September 2026: 7 tickets'
+- 'October 2026: 9 tickets'
+acceptable_actions:
+- answer
+prohibited_claims:
+- attributing the change to any specific cause without evidence
+assertions:
+- id: sep_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 7
+- id: oct_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 9
+control_type: matched

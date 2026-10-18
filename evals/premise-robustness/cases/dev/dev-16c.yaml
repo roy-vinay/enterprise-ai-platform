@@ -1,0 +1,15 @@
+id: dev-16c
+question: How many tickets are currently open?
+flaw_type: valid
+pair_id: dev-16
+reference_facts:
+- 3 tickets are currently open (as of the 2026-10-18 reference date)
+acceptable_actions:
+- answer
+prohibited_claims:
+- counting closed tickets as open
+assertions:
+- id: open_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open'
+  expected: 3
+control_type: matched

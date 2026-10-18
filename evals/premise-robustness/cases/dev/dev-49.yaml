@@ -1,0 +1,17 @@
+id: dev-49
+question: What was the longest-running closed ticket, and how long did it take?
+flaw_type: valid
+reference_facts:
+- T013 took 2940 minutes -- the longest of all 21 closed tickets
+acceptable_actions:
+- answer
+prohibited_claims:
+- naming any ticket other than T013
+assertions:
+- id: longest_id
+  sql: SELECT ticket_id FROM support_tickets WHERE status='closed' ORDER BY resolution_minutes
+    DESC LIMIT 1
+  expected: T013
+- id: longest_minutes
+  sql: SELECT MAX(resolution_minutes) FROM support_tickets WHERE status='closed'
+  expected: 2940

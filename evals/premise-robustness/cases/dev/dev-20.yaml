@@ -1,0 +1,25 @@
+id: dev-20
+question: Break down tickets by customer size.
+flaw_type: ambiguity
+pair_id: dev-20c
+reference_facts:
+- '''Size'' is ambiguous: segment (Enterprise 7, Mid-Market 8, SMB 9)? ticket count
+  per customer? employee count (no such data)?'
+acceptable_actions:
+- clarify
+- answer
+prohibited_claims:
+- choosing one meaning of 'size' without confirming
+assertions:
+- id: enterprise_count
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.segment='Enterprise'
+  expected: 7
+- id: smb_count
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.segment='SMB'
+  expected: 9
+- id: employee_col_absent
+  sql: SELECT COUNT(*) FROM pragma_table_info('customers') WHERE name LIKE '%employee%'
+    OR name LIKE '%size%'
+  expected: 0

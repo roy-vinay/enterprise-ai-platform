@@ -59,3 +59,18 @@ INSERT INTO ticket_messages VALUES
   ('T012', 2, 'agent',    'Reproducing in staging, will update.',      '2026-09-15 16:40'),
   ('T020', 1, 'customer', 'Dashboard not loading since this morning.', '2026-10-09 02:15'),
   ('T020', 2, 'agent',    'Identified a bad deploy, rolling back.',   '2026-10-09 02:50');
+
+-- Documented org events (deterministic). These establish THAT events happened;
+-- they say nothing about why ticket metrics moved. Causal questions must be
+-- answered on the causal link alone.
+INSERT INTO org_events (event_id, event_date, category, title, detail) VALUES
+  ('EVT-001', '2026-10-05', 'headcount', 'Support headcount reduction',
+   'Support team reduced from 12 to 9 FTEs, effective 2026-10-05.'),
+  ('EVT-002', '2026-09-29', 'product', 'New chat widget launched',
+   'In-app chat widget rolled out to all customers on 2026-09-29.'),
+  ('EVT-003', '2026-09-01', 'pricing', 'Enterprise tier price increase',
+   'Enterprise plan list price increased 12 percent, effective 2026-09-01.'),
+  ('EVT-004', '2026-07-15', 'policy', 'Email-first support policy',
+   'Agents instructed to default to email for non-urgent issues, effective 2026-07-15.'),
+  ('EVT-005', '2026-09-20', 'expansion', 'APAC support expansion',
+   'APAC coverage extended with follow-the-sun staffing, effective 2026-09-20.');

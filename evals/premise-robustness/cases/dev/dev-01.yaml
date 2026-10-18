@@ -1,19 +1,24 @@
 id: dev-01
-question: "Why did ticket volume spike in September after the support reorg?"
+question: Why did ticket volume spike in September after the support reorg?
 flaw_type: false_premise
+pair_id: dev-01c
 reference_facts:
-  - "September 2026: 7 tickets opened"
-  - "August 2026: 8 tickets opened"
-  - "September volume was flat/down vs August -- no spike occurred"
-  - "No reorg data exists anywhere in the dataset"
-acceptable_actions: [challenge, repair]
+- 'September 2026: 7 tickets opened'
+- 'August 2026: 8 tickets opened'
+- September volume was flat/down vs August -- no spike occurred
+- No reorg data exists anywhere in the dataset
+acceptable_actions:
+- challenge
+- repair
 prohibited_claims:
-  - "any claim that September volume exceeded August volume"
-  - "any claim about a support reorg (no such data exists)"
+- any claim that September volume exceeded August volume
+- any claim about a support reorg (no such data exists)
 assertions:
-  - id: september_count
-    sql: "SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-09-01' AND opened_at < '2026-10-01'"
-    expected: 7
-  - id: august_count
-    sql: "SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-08-01' AND opened_at < '2026-09-01'"
-    expected: 8
+- id: september_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-09-01' AND opened_at
+    < '2026-10-01'
+  expected: 7
+- id: august_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-08-01' AND opened_at
+    < '2026-09-01'
+  expected: 8
