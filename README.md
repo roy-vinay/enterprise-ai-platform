@@ -9,10 +9,14 @@ Every module runs locally on synthetic data with no API keys, so anything here c
 
 ## Modules
 
-| Module | Status | What it does |
-|---|---|---|
-| [evals/text-to-sql](evals/text-to-sql) | working | An eval pipeline for BI chat bots that measures when they should stay quiet: a trap set with refuse and clarify cases, metamorphic tests that need no answer key, mutation testing of the semantic model, a risk-coverage analysis with a business-weighted cost model and a held-out threshold check, and trust checks that fail right answers produced the wrong way (restricted columns, unpruned scans, writes and file reads). |
+<a href="evals/text-to-sql"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/assets/card-text-to-sql-dark.svg"><img src=".github/assets/card-text-to-sql-light.svg" width="49%" alt="Text-to-SQL evals: an eval pipeline for BI chat bots that measures when they should stay quiet."></picture></a>
 
 ## How the modules relate
 
 The eval module defines what "a right answer to the business question" means: metric definitions in a semantic model, reference queries, expected behavior when the question can't or shouldn't be answered, and the cost of getting it wrong. Later modules reuse that harness rather than inventing their own notion of correctness, so any new way of delivering answers can be measured on the same footing.
+
+## About
+
+<a href="https://www.linkedin.com/in/royvinay"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/assets/about-dark.svg"><img src=".github/assets/about-light.svg" width="100%" alt="About Vinay Roy: VP of Product at Burq.ai, leading Product and AI. Career from NVIDIA (2008), Qualcomm, Apple (Sidecar), Zeus Living, Vista, and a founding product role at an AI SaaS startup, to Burq.ai. Seven years as Head Instructor for the AI/ML executive program at UC Berkeley Executive Education. 3 US patents, MBA from Berkeley Haas, MS from IIT Roorkee."></picture></a>
+
+More projects and writing on [github.com/roy-vinay](https://github.com/roy-vinay).
