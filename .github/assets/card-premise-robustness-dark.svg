@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="224" viewBox="0 0 480 224" role="img" aria-label="Premise Robustness: evaluate the question before trusting the answer. Scripted prototype.">
+<rect x="0.5" y="0.5" width="479" height="223" rx="14" fill="#151C26" stroke="#344150"/>
+<text x="28" y="56" font-family="Georgia,serif" font-size="29" font-weight="700" fill="#F0F3F6">Premise Robustness</text>
+<text x="28" y="100" font-family="Helvetica,Arial,sans-serif" font-size="17" fill="#B9C3D0">Valid SQL can still answer the wrong question.</text>
+<text x="28" y="128" font-family="Helvetica,Arial,sans-serif" font-size="17" fill="#B9C3D0">Evaluate premise checks, corrections,</text>
+<text x="28" y="156" font-family="Helvetica,Arial,sans-serif" font-size="17" fill="#B9C3D0">and the usefulness of the response.</text>
+<text x="28" y="200" font-family="Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#C15C2A">Scripted prototype / No model findings yet</text></svg>
