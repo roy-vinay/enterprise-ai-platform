@@ -126,6 +126,7 @@ def run(
             judgment = judge_mod.judge_stub(
                 case, response["behavior_tag"], claim_check["passed"]
             )
+            judgment["case_id"] = case["id"]
             judgments.append(judgment)
             case_results.append(
                 {

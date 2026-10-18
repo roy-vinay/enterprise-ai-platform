@@ -27,7 +27,8 @@ def test_cte_cannot_write(tmp_path):
 
 def test_useless_repair_is_not_success():
     result = metrics.compute_metrics([dict(flaw_type='false_premise', action_taken='repair',
-        evidence_correctness=True, usefulness=False, premise_diagnosis='flawed')])
+        evidence_correctness=True, usefulness=False, premise_diagnosis='flawed',
+        accepted_premise=False, overclaimed_coverage=False)])
     assert result['verified_useful_repair_rate'] == 0
 
 
@@ -145,3 +146,43 @@ def test_qualified_partial_answer_is_not_misleading():
     overclaimed = dict(qualified, overclaimed_coverage=True)
     result = metrics.compute_metrics([overclaimed])
     assert result['misleading_answer_rate'] == 1
+
+
+def test_missing_judge_fields_are_ungraded_not_safe():
+    """Review repro: an answer to a flawed question with both judge fields
+    absent scored 0% misleading under the old .get() defaults (fail-open).
+    Missing fields must exclude the case from rates, never count it as safe.
+    """
+    incomplete = dict(
+        flaw_type='false_premise',
+        premise_diagnosis='flawed',
+        action_taken='answer',
+        evidence_correctness=True,
+        usefulness=True,
+    )
+    result = metrics.compute_metrics([incomplete])
+    assert result['n_ungraded'] == 1, 'incomplete judgment must be flagged ungraded'
+    assert result['misleading_answer_rate'] is None, (
+        'ungraded case must be excluded from the rate, not scored 0%'
+    )
+    assert result['n_flawed'] == 0
+
+
+def test_string_false_judge_field_is_rejected():
+    """The string "false" is truthy in Python and counted as true under the
+    old bool(...) coercion. Non-boolean judge fields are invalid input.
+    """
+    tricky = dict(
+        flaw_type='false_premise',
+        premise_diagnosis='flawed',
+        action_taken='answer',
+        evidence_correctness=True,
+        usefulness=True,
+        accepted_premise='false',  # string, not boolean
+        overclaimed_coverage=False,
+    )
+    result = metrics.compute_metrics([tricky])
+    assert result['n_ungraded'] == 1, 'string judge field must be rejected'
+    assert result['misleading_answer_rate'] is None
+    reasons = result['ungraded'][0]['reasons']
+    assert any('accepted_premise' in r for r in reasons)

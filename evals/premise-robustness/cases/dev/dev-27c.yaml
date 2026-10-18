@@ -15,4 +15,8 @@ assertions:
   expected_rows:
   - - C001
     - 2
-control_type: matched
+control_type: related
+control_note: The flawed twin asks which customers are at risk of churning, a predictive
+  objective with no schema counterpart (no churn labels or outcome data exist), so no
+  minimal twin exists. This control answers the closest answerable question (October
+  ticket volume ranking). Pair-based metrics use only matched controls.
