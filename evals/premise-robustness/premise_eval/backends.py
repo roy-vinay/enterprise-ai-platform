@@ -44,7 +44,7 @@ class OllamaBackend(ModelBackend):
         if len(matches) != 1 or not matches[0].get('digest'):
             raise ValueError(f'Install and pin local model {self.model} before judging')
         identity = dict(backend='ollama', model=self.model, digest=matches[0]['digest'],
-                        temperature=0, seed=17)
+                        temperature=0, seed=17, num_ctx=8192, num_predict=512, think=False)
         if self._identity is not None and identity != self._identity:
             raise ValueError('Local model digest changed during the run')
         self._identity = identity
@@ -53,7 +53,8 @@ class OllamaBackend(ModelBackend):
     def complete(self, messages, schema):
         self.identity()
         result = self._request('/api/chat', dict(model=self.model, messages=messages,
-            format=schema, stream=False, options=dict(temperature=0, seed=17)))
+            format=schema, stream=False, think=False,
+            options=dict(temperature=0, seed=17, num_ctx=8192, num_predict=512)))
         if result.get('done') is not True or not isinstance(result.get('message', {}).get('content'), str):
             raise ValueError('Incomplete Ollama response')
         self.identity()
