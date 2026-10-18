@@ -1,0 +1,4 @@
+response_id,premise_diagnosis,flaw_type,action_taken,evidence_correctness,usefulness,accepted_premise,overclaimed_coverage,notes
+unavailable_evidence-10,valid,unavailable_evidence,answer,false,false,true,false,"AI adjudication, not human review. The response treats proxy-based CSAT ranking as usable, despite the survey caveat. It does not reject the question as unanswerable."
+undefined_metric-05,flawed,undefined_metric,challenge,true,true,false,false,"AI adjudication, not human review. The response states the lack of a health standard and declines a normative conclusion; it does not ask a clarification question."
+unsupported_causal-06,flawed,unsupported_causal,challenge,true,true,false,true,"AI adjudication, not human review. The full October comparison is unqualified despite records stopping on October 16; observed months alone does not explicitly disclose partial-month coverage."
