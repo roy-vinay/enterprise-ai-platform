@@ -1,4 +1,7 @@
-# Text-to-SQL evals: measuring when a BI bot should stay quiet
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../.github/assets/text-to-sql-masthead-dark.svg">
+  <img src="../../.github/assets/text-to-sql-masthead-light.svg" width="100%" alt="Text-to-SQL evals: measuring when a BI bot should stay quiet. By Vinay Roy.">
+</picture>
 
 BI chat bots answer business questions in plain English, and people act on the answers. The dangerous failure is not the bot that crashes or says "I don't know." It is the bot that returns a clean, confident number for a slightly different question than the one asked, and nobody notices.
 
