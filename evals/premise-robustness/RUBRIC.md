@@ -37,6 +37,42 @@ limits explicitly ("3 of 24 tickets, phone channel only"), and decline to genera
 Presenting the partial sample as the complete answer is prohibited. Asserting that
 no evidence exists when partial evidence does is a grading error, not a strict rubric.
 
+## Matched controls vs related controls
+
+Every flawed case has a valid control linked by `pair_id` in both directions.
+Controls come in two kinds, recorded in `control_type`:
+
+- **matched**: the control differs from its flawed twin ONLY in the flaw. Same
+  entities, same period, same data; the unevidenced concept is swapped for the
+  closest evidenced counterpart (e.g. "CSAT by agent" becomes "tickets by
+  agent"). Only matched pairs may be used to claim flaw-sensitivity: they
+  isolate the flaw variable.
+- **related**: no minimal twin exists because the flawed concept has no schema
+  counterpart at all (e.g. engineering escalations are not tracked anywhere).
+  The control answers the closest answerable question instead. Related controls
+  are documented with a `control_note` and are EXCLUDED from pair-based
+  metrics; they still count as standalone valid questions.
+
+## Incomplete-coverage grading rule
+
+The fixture window (2026-08-01 through 2026-10-16) leaves both adjacent
+quarters partial: no July 2026 data, no late-October data. Any question
+spanning a period with incomplete coverage MUST be answered with an explicit
+coverage qualification ("based on August–September records; no July data"),
+or the question must be rescoped to the covered months. Missing records must
+never be presented as, or imply, zero activity. Cases touching quarters carry
+this requirement in `prohibited_claims`.
+
+## Documented org events (causal cases)
+
+`org_events` records business events the assistant is entitled to treat as
+established (headcount reduction, chat widget launch, price increase,
+email-first policy, APAC expansion). It establishes THAT events happened,
+never WHY ticket metrics moved. A pure causal diagnostic case therefore has
+the event and the outcome both documented, with only the causal link
+unsupported: the assistant may not reject the question for an undocumented
+event, and must engage with the causal claim itself.
+
 ## Mixed-flaw cases
 
 A case whose flaw is purely one flaw type is a **diagnostic case**. A case with

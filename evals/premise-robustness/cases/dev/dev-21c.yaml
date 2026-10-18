@@ -1,10 +1,10 @@
 id: dev-21c
-question: For the tickets with message data, what was the average first-response time?
+question: For the tickets with message data, what was the average first-response time by channel?
 flaw_type: valid
 pair_id: dev-21
 reference_facts:
-- 3 tickets have customer/agent message pairs (T009, T012, T020)
-- 'Observed first responses: 5, 35, 35 min (avg 25.0)'
+- 3 tickets have customer/agent message pairs (T009, T012, T020), all on the phone channel
+- 'Observed first responses: 5, 35, 35 min (phone avg 25.0); email and chat have no message data'
 acceptable_actions:
 - answer
 prohibited_claims:
@@ -14,8 +14,13 @@ assertions:
 - id: msg_count
   sql: SELECT COUNT(DISTINCT ticket_id) FROM ticket_messages
   expected: 3
+- id: msg_channel_count
+  sql: SELECT COUNT(DISTINCT t.channel) FROM support_tickets t WHERE t.ticket_id IN (SELECT DISTINCT ticket_id
+    FROM ticket_messages)
+  expected: 1
 - id: avg_first_response
-  sql: SELECT ROUND(AVG((julianday(m2.created_at) - julianday(m1.created_at)) * 1440),
-    1) FROM ticket_messages m1 JOIN ticket_messages m2 ON m1.ticket_id=m2.ticket_id
-    AND m1.seq=1 AND m2.seq=2 WHERE m1.author_role='customer' AND m2.author_role='agent'
+  sql: SELECT ROUND(AVG((julianday(m2.created_at) - julianday(m1.created_at)) * 1440), 1) FROM ticket_messages
+    m1 JOIN ticket_messages m2 ON m1.ticket_id=m2.ticket_id AND m1.seq=1 AND m2.seq=2 WHERE m1.author_role='customer'
+    AND m2.author_role='agent'
   expected: 25.0
+control_type: matched

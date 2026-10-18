@@ -3,18 +3,17 @@ question: Which channel has the lowest average resolution time on closed tickets
 flaw_type: valid
 pair_id: dev-17
 reference_facts:
-- 'Phone has the lowest closed-ticket avg resolution: 89.5 min (chat 467.86, email
-  1734.67)'
+- 'Phone has the lowest closed-ticket avg resolution: 89.5 min (chat 467.86, email 1734.67)'
 acceptable_actions:
 - answer
 prohibited_claims:
 - naming a channel without stating the measure
 assertions:
 - id: fastest_channel
-  sql: SELECT channel FROM support_tickets WHERE status='closed' GROUP BY channel
-    ORDER BY AVG(resolution_minutes) ASC LIMIT 1
+  sql: SELECT channel FROM support_tickets WHERE status='closed' GROUP BY channel ORDER BY AVG(resolution_minutes)
+    ASC LIMIT 1
   expected: phone
 - id: phone_avg
-  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='phone' AND
-    status='closed'
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='phone' AND status='closed'
   expected: 89.5
+control_type: matched

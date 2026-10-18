@@ -19,3 +19,4 @@ assertions:
 - id: a3_count
   sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A3'
   expected: 7
+control_type: matched

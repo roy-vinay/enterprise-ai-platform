@@ -58,8 +58,12 @@ make run-dev   # fake-model run over cases/dev, JSON report to reports/
 evals/premise-robustness/
   README.md  PRD.md  RUBRIC.md  Makefile  requirements.txt
   datasets/support/      schema.sql, seed.sql (deterministic)
-  cases/dev/             90 YAML cases: 40 flawed + 40 matched valid controls
-                         (pair_id, bidirectional) + 10 standalone valid
+                         customers, agents, support_tickets, ticket_messages,
+                         org_events (documented business events: headcount,
+                         product, pricing, policy, expansion)
+  cases/dev/             90 YAML cases: 40 flawed + 40 valid controls
+                         (pair_id, bidirectional; control_type matched/related)
+                         + 10 standalone valid
   cases/heldout/         README + placeholder manifest.json
   prompts/               arm-ordinary/critique/evidence.md (versioned)
   premise_eval/          db, runner, verify, judge (stub), metrics, versions

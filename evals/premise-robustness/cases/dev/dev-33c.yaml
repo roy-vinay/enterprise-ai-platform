@@ -12,3 +12,4 @@ assertions:
 - id: overall_avg
   sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed'
   expected: 685.6666666666666
+control_type: matched

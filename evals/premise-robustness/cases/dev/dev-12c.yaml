@@ -18,3 +18,4 @@ assertions:
   sql: SELECT AVG(resolution_minutes) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
     WHERE c.segment='SMB' AND t.status='closed'
   expected: 1477.0
+control_type: matched

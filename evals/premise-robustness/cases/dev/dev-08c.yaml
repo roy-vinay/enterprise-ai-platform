@@ -11,10 +11,11 @@ prohibited_claims:
 - any claim of an October collapse in phone volume
 assertions:
 - id: sep_phone
-  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
-    '2026-09-01' AND opened_at < '2026-10-01'
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >= '2026-09-01' AND opened_at
+    < '2026-10-01'
   expected: 2
 - id: oct_phone
-  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
-    '2026-10-01' AND opened_at < '2026-11-01'
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >= '2026-10-01' AND opened_at
+    < '2026-11-01'
   expected: 3
+control_type: matched

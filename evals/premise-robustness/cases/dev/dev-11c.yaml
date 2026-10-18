@@ -10,14 +10,15 @@ prohibited_claims:
 - any claim that one channel dominated October
 assertions:
 - id: oct_chat
-  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='chat' AND opened_at >=
-    '2026-10-01' AND opened_at < '2026-11-01'
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='chat' AND opened_at >= '2026-10-01' AND opened_at
+    < '2026-11-01'
   expected: 3
 - id: oct_email
-  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='email' AND opened_at >=
-    '2026-10-01' AND opened_at < '2026-11-01'
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='email' AND opened_at >= '2026-10-01' AND opened_at
+    < '2026-11-01'
   expected: 3
 - id: oct_phone
-  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
-    '2026-10-01' AND opened_at < '2026-11-01'
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >= '2026-10-01' AND opened_at
+    < '2026-11-01'
   expected: 3
+control_type: matched

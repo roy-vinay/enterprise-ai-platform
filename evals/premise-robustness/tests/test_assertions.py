@@ -79,6 +79,16 @@ def test_matched_pairs():
     controls = [cid for cid, (_, c) in by_id.items()
                 if c["flaw_type"] == "valid" and "pair_id" in c]
     assert len(controls) == 40, f"expected 40 controls, found {len(controls)}"
+    for cid in controls:
+        name, case = by_id[cid]
+        ctype = case.get("control_type")
+        assert ctype in {"matched", "related"}, (
+            f"{name}: control_type must be 'matched' or 'related', got {ctype!r}"
+        )
+        if ctype == "related":
+            assert case.get("control_note"), f"{name}: related control needs control_note"
+    matched = [cid for cid in controls if by_id[cid][1]["control_type"] == "matched"]
+    assert matched, "no matched controls: pair-based metrics would be empty"
     standalone = [cid for cid, (_, c) in by_id.items()
                   if c["flaw_type"] == "valid" and "pair_id" not in c]
     assert len(standalone) == 10, f"expected 10 standalone valid, found {len(standalone)}"

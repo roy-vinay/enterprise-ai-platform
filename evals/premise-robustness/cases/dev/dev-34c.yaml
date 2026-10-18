@@ -10,10 +10,10 @@ prohibited_claims:
 - naming a region without stating what 'needs attention' means
 assertions:
 - id: top_region
-  sql: SELECT c.region FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
-    GROUP BY c.region ORDER BY COUNT(*) DESC LIMIT 1
+  sql: SELECT c.region FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id GROUP BY
+    c.region ORDER BY COUNT(*) DESC LIMIT 1
   expected: EMEA
 - id: emea_count
-  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
-    WHERE c.region='EMEA'
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id WHERE c.region='EMEA'
   expected: 9
+control_type: matched

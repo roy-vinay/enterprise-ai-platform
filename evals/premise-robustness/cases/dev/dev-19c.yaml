@@ -1,6 +1,5 @@
 id: dev-19c
-question: How did average resolution time on closed tickets change from August to
-  October 2026?
+question: How did average resolution time on closed tickets change from August to October 2026?
 flaw_type: valid
 pair_id: dev-19
 reference_facts:
@@ -11,14 +10,15 @@ prohibited_claims:
 - giving a better/worse verdict without stating the measure and window
 assertions:
 - id: aug_avg
-  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed' AND
-    opened_at >= '2026-08-01' AND opened_at < '2026-09-01'
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed' AND opened_at >= '2026-08-01'
+    AND opened_at < '2026-09-01'
   expected: 726.2857142857143
 - id: sep_avg
-  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed' AND
-    opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed' AND opened_at >= '2026-09-01'
+    AND opened_at < '2026-10-01'
   expected: 757.5
 - id: oct_avg
-  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed' AND
-    opened_at >= '2026-10-01' AND opened_at < '2026-11-01'
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed' AND opened_at >= '2026-10-01'
+    AND opened_at < '2026-11-01'
   expected: 596.25
+control_type: matched

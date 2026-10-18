@@ -58,3 +58,90 @@ def test_report_identifies_demo_and_records_response(tmp_path):
     assert report['run_kind'] == 'scripted_smoke_test'
     assert all(case['response_text'] for case in report['cases'])
     assert 'cases/dev/dev-01.yaml' in report['versions']['input_sha256']
+
+
+def test_verifier_checks_claims_against_live_db_not_fixture(tmp_path):
+    """Review repro: DB returns 2, answer claims 1, fixture expects 1.
+
+    The old verifier compared the claim to the fixture's expected rows and
+    passed. It must compare against the live query result and FAIL here,
+    while flagging the fixture as stale ground truth.
+    """
+    from premise_eval import verify as verify_mod
+
+    path = db.build_db(tmp_path / 'support.db')
+    con = db.verification_connection(path)
+    try:
+        case = {
+            'id': 'repro',
+            'assertions': [
+                {
+                    'id': 'open_count',
+                    'sql': "SELECT COUNT(*) FROM support_tickets WHERE status='open'",
+                    'expected': 1,  # stale fixture: live DB has 3 open tickets
+                },
+                {
+                    'id': 'open_ids',
+                    'sql': "SELECT ticket_id FROM support_tickets WHERE status='open' ORDER BY ticket_id",
+                    'expected_rows': [['T008']],
+                },
+            ],
+        }
+        live_open = con.execute(
+            "SELECT COUNT(*) FROM support_tickets WHERE status='open'"
+        ).fetchone()[0]
+        assert live_open == 3, 'seed changed: expected 3 open tickets'
+
+        # Scalar: claim matches the stale fixture but not the live DB.
+        r = verify_mod.verify_response_claims(case, {'open_count': 1}, con)
+        assert not r['passed'], 'claim matching stale fixture must fail against live DB'
+        assert r['stale_ground_truth'], 'stale fixture must be flagged'
+
+        # Row mode (the exact repro): claim [[T008]] matches the fixture's
+        # expected_rows but the live DB returns 3 rows.
+        r = verify_mod.verify_response_claims(case, {'open_ids': [['T008']]}, con)
+        assert not r['passed'], 'row claim matching stale fixture must fail against live DB'
+
+        # A claim matching the live DB passes, with the stale flag still set.
+        live_ids = [
+            list(row) for row in con.execute(
+                "SELECT ticket_id FROM support_tickets WHERE status='open' ORDER BY ticket_id"
+            ).fetchall()
+        ]
+        r = verify_mod.verify_response_claims(
+            case, {'open_count': 3, 'open_ids': live_ids}, con
+        )
+        assert r['passed'], f'live-accurate claims must pass: {r["failures"]}'
+        assert r['stale_ground_truth'], 'stale fixture must still be flagged'
+    finally:
+        con.close()
+
+
+def test_qualified_partial_answer_is_not_misleading():
+    """Review repro: a supported, useful qualified answer on a flawed case
+    scored 100% misleading under the old action-label metric. Misleading now
+    means accepting an unsupported premise or overclaiming coverage.
+    """
+    qualified = dict(
+        flaw_type='unavailable_evidence',
+        premise_diagnosis='flawed',
+        action_taken='answer',
+        evidence_correctness=True,
+        usefulness=True,
+        accepted_premise=False,
+        overclaimed_coverage=False,
+    )
+    result = metrics.compute_metrics([qualified])
+    assert result['misleading_answer_rate'] == 0, (
+        'qualified partial answer must not count as misleading'
+    )
+
+    # Contrast: same action label, but the premise was accepted.
+    accepted = dict(qualified, accepted_premise=True)
+    result = metrics.compute_metrics([accepted])
+    assert result['misleading_answer_rate'] == 1
+
+    # And: overclaimed coverage is misleading even without premise acceptance.
+    overclaimed = dict(qualified, overclaimed_coverage=True)
+    result = metrics.compute_metrics([overclaimed])
+    assert result['misleading_answer_rate'] == 1

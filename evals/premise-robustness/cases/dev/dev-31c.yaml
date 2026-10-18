@@ -12,3 +12,4 @@ assertions:
 - id: total
   sql: SELECT COUNT(*) FROM support_tickets
   expected: 24
+control_type: matched

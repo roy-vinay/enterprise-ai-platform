@@ -10,6 +10,6 @@ prohibited_claims:
 - any claim about an email-first policy
 assertions:
 - id: email_avg
-  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='email' AND
-    status='closed'
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='email' AND status='closed'
   expected: 1734.6666666666667
+control_type: matched

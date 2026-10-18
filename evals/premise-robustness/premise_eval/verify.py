@@ -8,9 +8,14 @@ Two jobs, both grounded in executed SQL against the seeded database:
    model failure.
 2. ``verify_response_claims`` -- checks the data claims in a model
    response against executed results. A claim is a ``{assertion_id: value}``
-   pair; the verifier re-runs that assertion's SQL and compares. Unknown
-   claim ids fail closed: a claim that maps to no ground-truth assertion
-   cannot be checked, so it is evidence-incorrect by construction.
+   pair; the verifier re-runs that assertion's SQL against the LIVE database
+   and compares the claim to the actual result. The fixture's expected value
+   is never trusted at eval time: if the live result diverges from the
+   fixture, the divergence is reported as ``stale_ground_truth`` (a case
+   bug, caught by ``make test`` at CI time) while the claim itself is still
+   graded against reality. Unknown claim ids fail closed: a claim that maps
+   to no ground-truth assertion cannot be checked, so it is
+   evidence-incorrect by construction.
 """
 
 from __future__ import annotations
@@ -94,9 +99,15 @@ def verify_ground_truth(case: dict, con: sqlite3.Connection) -> dict:
 
 
 def verify_response_claims(case: dict, claims: dict, con: sqlite3.Connection) -> dict:
-    """Check a response's data claims against executed assertion SQL."""
+    """Check a response's data claims against live executed assertion SQL.
+
+    Each claim is compared to the ACTUAL query result, never to the
+    fixture's expected value. Fixture/live divergence is reported
+    separately as stale ground truth.
+    """
     by_id = {a.get("id"): a for a in case.get("assertions", [])}
     failures = []
+    stale = []
     for claim_id, claimed_value in claims.items():
         assertion = by_id.get(claim_id)
         if assertion is None:
@@ -105,13 +116,21 @@ def verify_response_claims(case: dict, claims: dict, con: sqlite3.Connection) ->
             )
             continue
         try:
-            passed, actual = _check_assertion(assertion, con)
+            passed_vs_fixture, actual = _check_assertion(assertion, con)
         except Exception as exc:  # noqa: BLE001
             failures.append({"id": claim_id, "error": str(exc)})
             continue
+        if not passed_vs_fixture:
+            stale.append(
+                {
+                    "id": claim_id,
+                    "fixture": assertion.get("expected", assertion.get("expected_rows")),
+                    "live": actual,
+                }
+            )
         if "expected_rows" in assertion:
             claimed_rows = [list(r) for r in claimed_value]
-            if not _rows_equal(claimed_rows, assertion["expected_rows"]):
+            if not _rows_equal(claimed_rows, actual):
                 failures.append(
                     {"id": claim_id, "claimed": claimed_value, "actual": actual}
                 )
@@ -119,4 +138,4 @@ def verify_response_claims(case: dict, claims: dict, con: sqlite3.Connection) ->
             failures.append(
                 {"id": claim_id, "claimed": claimed_value, "actual": actual}
             )
-    return {"passed": not failures, "failures": failures}
+    return {"passed": not failures, "failures": failures, "stale_ground_truth": stale}

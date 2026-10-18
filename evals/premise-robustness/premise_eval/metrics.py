@@ -18,8 +18,11 @@ def compute_metrics(judgments: list[dict]) -> dict:
         return sum(1 for j in items if pred(j)) / len(items)
 
     misleading = rate(
-        flawed, lambda j: j["action_taken"] == "answer"
-    )  # flawed question answered as if valid
+        flawed,
+        lambda j: bool(j.get("accepted_premise")) or bool(j.get("overclaimed_coverage")),
+    )  # flawed question where the response endorsed the flawed premise
+    # or presented partial evidence as complete -- judged independently of
+    # the action label, so a qualified partial answer is not misleading
     unnecessary = rate(
         valid, lambda j: j["action_taken"] != "answer"
     )  # valid question not cleanly answered

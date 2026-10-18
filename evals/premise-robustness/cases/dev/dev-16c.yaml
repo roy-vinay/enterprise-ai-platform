@@ -12,3 +12,4 @@ assertions:
 - id: open_count
   sql: SELECT COUNT(*) FROM support_tickets WHERE status='open'
   expected: 3
+control_type: matched

@@ -5,16 +5,20 @@ pair_id: dev-02
 reference_facts:
 - 'Q3 2026 (Jul-Sep): 13 closed tickets'
 - 'Average resolution: 740.69 min'
+- 'Coverage is August and September only: no July 2026 data exists in the fixture'
 acceptable_actions:
 - answer
 prohibited_claims:
 - presenting the average without stating it covers closed tickets in Q3
+- presenting the Q3 figure as a complete quarter without noting July data is missing
+- treating missing July records as zero July activity
 assertions:
 - id: q3_closed_count
-  sql: SELECT COUNT(*) FROM support_tickets WHERE status='closed' AND opened_at >=
-    '2026-07-01' AND opened_at < '2026-10-01'
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='closed' AND opened_at >= '2026-07-01' AND opened_at
+    < '2026-10-01'
   expected: 13
 - id: q3_avg
-  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed' AND
-    opened_at >= '2026-07-01' AND opened_at < '2026-10-01'
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed' AND opened_at >= '2026-07-01'
+    AND opened_at < '2026-10-01'
   expected: 740.6923076923077
+control_type: matched

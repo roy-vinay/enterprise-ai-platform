@@ -1,14 +1,15 @@
 id: dev-29c
-question: How many open P3 tickets are there?
+question: How many open P1 and P2 tickets are there?
 flaw_type: valid
 pair_id: dev-29
 reference_facts:
-- All 3 open tickets are P3
+- Zero open P1 or P2 tickets; all 3 open tickets are P3
 acceptable_actions:
 - answer
 prohibited_claims:
 - reporting a backlog number without stating the priority cutoff
 assertions:
-- id: open_p3
-  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open' AND priority='P3'
-  expected: 3
+- id: open_p1p2
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open' AND priority IN ('P1','P2')
+  expected: 0
+control_type: matched

@@ -1,11 +1,10 @@
 id: dev-07c
-question: How did Enterprise customers' average resolution time change month over
-  month from August to October 2026?
+question: How did Enterprise customers' average resolution time change month over month from August to
+  October 2026?
 flaw_type: valid
 pair_id: dev-07
 reference_facts:
-- 'Enterprise closed-ticket avg resolution fell each month: Aug 233.67, Sep 135.0,
-  Oct 68.33 min'
+- 'Enterprise closed-ticket avg resolution fell each month: Aug 233.67, Sep 135.0, Oct 68.33 min'
 acceptable_actions:
 - answer
 prohibited_claims:
@@ -13,16 +12,14 @@ prohibited_claims:
 assertions:
 - id: ent_aug_avg
   sql: SELECT AVG(resolution_minutes) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
-    WHERE c.segment='Enterprise' AND t.status='closed' AND opened_at >= '2026-08-01'
-    AND opened_at < '2026-09-01'
+    WHERE c.segment='Enterprise' AND t.status='closed' AND opened_at >= '2026-08-01' AND opened_at < '2026-09-01'
   expected: 233.66666666666666
 - id: ent_sep_avg
   sql: SELECT AVG(resolution_minutes) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
-    WHERE c.segment='Enterprise' AND t.status='closed' AND opened_at >= '2026-09-01'
-    AND opened_at < '2026-10-01'
+    WHERE c.segment='Enterprise' AND t.status='closed' AND opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
   expected: 135.0
 - id: ent_oct_avg
   sql: SELECT AVG(resolution_minutes) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
-    WHERE c.segment='Enterprise' AND t.status='closed' AND opened_at >= '2026-10-01'
-    AND opened_at < '2026-11-01'
+    WHERE c.segment='Enterprise' AND t.status='closed' AND opened_at >= '2026-10-01' AND opened_at < '2026-11-01'
   expected: 68.33333333333333
+control_type: matched

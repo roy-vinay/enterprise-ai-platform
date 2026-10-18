@@ -1,6 +1,5 @@
 id: dev-14c
-question: How many tickets did Maya Chen handle, and what was her average resolution
-  time on closed tickets?
+question: How many tickets did Maya Chen handle, and what was her average resolution time on closed tickets?
 flaw_type: valid
 pair_id: dev-14
 reference_facts:
@@ -15,6 +14,6 @@ assertions:
   sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A1'
   expected: 9
 - id: a1_avg
-  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE agent_id='A1' AND
-    status='closed'
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE agent_id='A1' AND status='closed'
   expected: 135.57142857142858
+control_type: matched

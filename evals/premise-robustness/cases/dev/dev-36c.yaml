@@ -10,10 +10,11 @@ prohibited_claims:
 - any claim about a price increase or its effects
 assertions:
 - id: aug_p1
-  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-08-01'
-    AND opened_at < '2026-09-01'
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-08-01' AND opened_at
+    < '2026-09-01'
   expected: 1
 - id: sep_p1
-  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-09-01'
-    AND opened_at < '2026-10-01'
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1' AND opened_at >= '2026-09-01' AND opened_at
+    < '2026-10-01'
   expected: 2
+control_type: matched

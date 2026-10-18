@@ -10,9 +10,9 @@ prohibited_claims:
 - naming a 'most effective' channel without a stated definition
 assertions:
 - id: channel_rank
-  sql: SELECT channel FROM support_tickets WHERE status='closed' GROUP BY channel
-    ORDER BY COUNT(*) DESC
+  sql: SELECT channel FROM support_tickets WHERE status='closed' GROUP BY channel ORDER BY COUNT(*) DESC
   expected_rows:
   - - phone
   - - chat
   - - email
+control_type: matched

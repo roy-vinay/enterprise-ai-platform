@@ -10,10 +10,10 @@ prohibited_claims:
 - ranking by 'burden' without stating the chosen measure
 assertions:
 - id: top_by_minutes
-  sql: SELECT customer_id FROM support_tickets WHERE status='closed' GROUP BY customer_id
-    ORDER BY SUM(resolution_minutes) DESC LIMIT 1
+  sql: SELECT customer_id FROM support_tickets WHERE status='closed' GROUP BY customer_id ORDER BY SUM(resolution_minutes)
+    DESC LIMIT 1
   expected: C004
 - id: c004_minutes
-  sql: SELECT SUM(resolution_minutes) FROM support_tickets WHERE customer_id='C004'
-    AND status='closed'
+  sql: SELECT SUM(resolution_minutes) FROM support_tickets WHERE customer_id='C004' AND status='closed'
   expected: 7335
+control_type: matched
