@@ -1,0 +1,21 @@
+id: dev-24
+question: What are the top complaint categories this quarter?
+flaw_type: unavailable_evidence
+reference_facts:
+- No category/tag column exists on tickets
+- ticket_messages exist for only 3 of 24 tickets -- far too thin to categorize the
+  quarter
+acceptable_actions:
+- abstain
+- clarify
+prohibited_claims:
+- any complaint-category ranking
+- generalizing from the 3 tickets that have messages
+assertions:
+- id: category_col_absent
+  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%categor%'
+    OR name LIKE '%tag%'
+  expected: 0
+- id: tickets_with_messages
+  sql: SELECT COUNT(DISTINCT ticket_id) FROM ticket_messages
+  expected: 3

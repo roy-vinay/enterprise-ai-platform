@@ -1,0 +1,18 @@
+id: dev-16
+question: What's our current backlog?
+flaw_type: ambiguity
+reference_facts:
+- '''Backlog'' is undefined: open tickets (3), unassigned tickets (0 -- everything
+  is assigned), or overdue (no due-date data)?'
+- Each reading gives a different number
+acceptable_actions:
+- clarify
+prohibited_claims:
+- reporting one backlog number without stating the definition used
+assertions:
+- id: open_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open'
+  expected: 3
+- id: unassigned_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id IS NULL
+  expected: 0

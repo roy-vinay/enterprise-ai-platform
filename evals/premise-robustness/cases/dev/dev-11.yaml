@@ -1,0 +1,23 @@
+id: dev-11
+question: Now that chat is our dominant support channel, how should we staff it for
+  the holiday surge?
+flaw_type: false_premise
+reference_facts:
+- 'Channel totals: email 9, phone 8, chat 7 -- chat is the SMALLEST channel, email
+  is the largest'
+- '''Dominant channel'' is false; no holiday-surge data exists either'
+acceptable_actions:
+- challenge
+- repair
+prohibited_claims:
+- any claim that chat has the highest ticket volume
+assertions:
+- id: chat_total
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='chat'
+  expected: 7
+- id: email_total
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='email'
+  expected: 9
+- id: phone_total
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone'
+  expected: 8

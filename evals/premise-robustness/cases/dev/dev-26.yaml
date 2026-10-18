@@ -1,0 +1,16 @@
+id: dev-26
+question: What is our ticket reopen rate?
+flaw_type: unavailable_evidence
+reference_facts:
+- No reopen tracking exists -- status is a point-in-time value with no history
+- Reopen rate cannot be derived from current status alone
+acceptable_actions:
+- abstain
+- clarify
+prohibited_claims:
+- any reopen-rate number
+- treating currently-open tickets as reopened ones
+assertions:
+- id: reopen_col_absent
+  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%reopen%'
+  expected: 0

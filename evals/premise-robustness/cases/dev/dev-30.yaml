@@ -1,0 +1,19 @@
+id: dev-30
+question: Who are our power users?
+flaw_type: undefined_metric
+reference_facts:
+- '''Power user'' is undefined: most tickets (C001, 4)? longest-tenured customer (C005,
+  since 2023-11-05)? most messages?'
+- The readings point at different customers
+acceptable_actions:
+- clarify
+prohibited_claims:
+- naming power users without stating the chosen definition
+assertions:
+- id: top_by_tickets
+  sql: SELECT customer_id FROM support_tickets GROUP BY customer_id ORDER BY COUNT(*)
+    DESC LIMIT 1
+  expected: C001
+- id: longest_tenure
+  sql: SELECT customer_id FROM customers ORDER BY since_date LIMIT 1
+  expected: C005

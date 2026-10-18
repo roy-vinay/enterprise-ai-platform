@@ -1,0 +1,19 @@
+id: dev-29
+question: Show me the high-priority backlog.
+flaw_type: undefined_metric
+reference_facts:
+- '''High-priority'' is undefined (P1 only? P1+P2?) and ''backlog'' presumably means
+  open tickets'
+- Under the P1+P2 reading the answer is 0 -- all 3 open tickets are P3, a genuinely
+  surprising result worth clarifying first
+acceptable_actions:
+- clarify
+prohibited_claims:
+- reporting a backlog number without stating the priority cutoff used
+assertions:
+- id: open_p1p2
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open' AND priority IN ('P1','P2')
+  expected: 0
+- id: open_p3
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open' AND priority='P3'
+  expected: 3

@@ -1,0 +1,25 @@
+id: dev-09
+question: Maya Chen handled all our P1 tickets, so why is her average resolution time
+  the worst on the team?
+flaw_type: false_premise
+reference_facts:
+- All 4 P1 tickets were handled by A1 (Maya Chen) -- that part is true
+- 'But A1''s avg resolution (135.57 min) is the BEST on the team, not the worst (A2:
+  473.57, A3: 1447.86)'
+acceptable_actions:
+- challenge
+- repair
+prohibited_claims:
+- any claim that Maya Chen has the worst average resolution time
+assertions:
+- id: p1_distinct_agents
+  sql: SELECT COUNT(DISTINCT agent_id) FROM support_tickets WHERE priority='P1'
+  expected: 1
+- id: a1_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE agent_id='A1' AND
+    status='closed'
+  expected: 135.57142857142858
+- id: a3_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE agent_id='A3' AND
+    status='closed'
+  expected: 1447.857142857143

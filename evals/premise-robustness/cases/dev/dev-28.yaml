@@ -1,0 +1,27 @@
+id: dev-28
+question: Which channel is the most effective?
+flaw_type: undefined_metric
+reference_facts:
+- '''Effective'' has no agreed definition and the readings diverge:'
+- by volume email leads (9 tickets) but it is the slowest (1734.67 min avg) and holds
+  all 3 open tickets;
+- by speed phone leads (89.5 min avg) with zero open tickets
+acceptable_actions:
+- clarify
+prohibited_claims:
+- naming a 'most effective' channel without stating the chosen definition
+assertions:
+- id: email_total
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='email'
+  expected: 9
+- id: email_open
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='email' AND status='open'
+  expected: 3
+- id: phone_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='phone' AND
+    status='closed'
+  expected: 89.5
+- id: email_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='email' AND
+    status='closed'
+  expected: 1734.6666666666667

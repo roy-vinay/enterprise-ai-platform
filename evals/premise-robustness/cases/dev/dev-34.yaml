@@ -1,0 +1,19 @@
+id: dev-34
+question: Which region needs the most attention?
+flaw_type: undefined_metric
+reference_facts:
+- '''Attention'' is undefined and the readings diverge:'
+- by total tickets EMEA leads (9); by open tickets APAC holds all 3 (all from C007)
+acceptable_actions:
+- clarify
+prohibited_claims:
+- naming a region without stating what 'needs attention' means
+assertions:
+- id: emea_total
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='EMEA'
+  expected: 9
+- id: apac_open
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='APAC' AND t.status='open'
+  expected: 3

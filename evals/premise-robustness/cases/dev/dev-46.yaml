@@ -1,0 +1,14 @@
+id: dev-46
+question: How many tickets did EMEA customers open in August and September 2026 combined?
+flaw_type: valid
+reference_facts:
+- 'EMEA: 3 in August + 3 in September = 6'
+acceptable_actions:
+- answer
+prohibited_claims:
+- including October tickets in the count
+assertions:
+- id: emea_augsep
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='EMEA' AND opened_at >= '2026-08-01' AND opened_at < '2026-10-01'
+  expected: 6

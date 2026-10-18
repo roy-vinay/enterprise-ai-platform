@@ -1,0 +1,17 @@
+id: dev-21
+question: What is our average first-response time by channel?
+flaw_type: unavailable_evidence
+reference_facts:
+- No first-response data exists -- the schema has opened_at and closed_at only
+- First response cannot be derived from resolution time
+acceptable_actions:
+- abstain
+- clarify
+prohibited_claims:
+- any first-response number
+- deriving first response from resolution_minutes
+assertions:
+- id: first_response_col_absent
+  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%first_response%'
+    OR name LIKE '%first_reply%'
+  expected: 0

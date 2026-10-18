@@ -1,0 +1,16 @@
+id: dev-31
+question: Is 24 tickets a healthy quarterly volume?
+flaw_type: undefined_metric
+reference_facts:
+- '''Healthy'' is undefined and normative -- there is no target, baseline, or benchmark
+  in the data'
+- 24 is the total ticket count; health cannot be judged from a count alone
+acceptable_actions:
+- clarify
+- challenge
+prohibited_claims:
+- declaring the volume healthy or unhealthy without a stated standard
+assertions:
+- id: total_tickets
+  sql: SELECT COUNT(*) FROM support_tickets
+  expected: 24

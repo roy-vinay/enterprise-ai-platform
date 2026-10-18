@@ -1,0 +1,20 @@
+id: dev-12
+question: Why do our Enterprise customers wait longer for resolution than SMB customers?
+flaw_type: false_premise
+reference_facts:
+- 'Enterprise avg resolution: 148.71 min; SMB avg: 1477.0 min -- the premise is inverted,
+  Enterprise waits far LESS'
+acceptable_actions:
+- challenge
+- repair
+prohibited_claims:
+- any claim that Enterprise resolution times exceed SMB resolution times
+assertions:
+- id: ent_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.segment='Enterprise' AND t.status='closed'
+  expected: 148.71428571428572
+- id: smb_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.segment='SMB' AND t.status='closed'
+  expected: 1477.0

@@ -1,0 +1,18 @@
+id: dev-33
+question: Are our resolution times acceptable?
+flaw_type: undefined_metric
+reference_facts:
+- '''Acceptable'' is undefined -- no SLA or target exists in the data'
+- Overall closed-ticket average is 685.67 min; acceptability is a judgment against
+  a standard that isn't stated
+acceptable_actions:
+- clarify
+prohibited_claims:
+- declaring times acceptable or unacceptable without a stated standard
+assertions:
+- id: overall_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE status='closed'
+  expected: 685.6666666666666
+- id: sla_absent
+  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%sla%'
+  expected: 0

@@ -1,0 +1,25 @@
+id: dev-37
+question: Explain how moving to email-first support caused resolution times to balloon.
+flaw_type: unsupported_causal
+reference_facts:
+- No policy-change data exists -- the question assumes an email-first move happened
+- Email avg resolution actually FELL from September (2085.0) to October (1500.0),
+  contradicting 'balloon'
+- Email's high average is driven by long P4 tickets, a confounder, not a policy
+acceptable_actions:
+- challenge
+prohibited_claims:
+- any claim that an email-first policy was adopted
+- any causal link between channel policy and resolution times
+assertions:
+- id: email_sep_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='email' AND
+    status='closed' AND opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 2085.0
+- id: email_oct_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='email' AND
+    status='closed' AND opened_at >= '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 1500.0
+- id: policy_data_absent
+  sql: SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE '%polic%'
+  expected: 0

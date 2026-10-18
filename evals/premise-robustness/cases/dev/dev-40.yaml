@@ -1,0 +1,30 @@
+id: dev-40
+question: Explain how slower phone response times pushed customers to email in October.
+flaw_type: unsupported_causal
+reference_facts:
+- No first-response data exists, so 'slower phone response times' cannot be established
+- 'No channel shift occurred either: October was 3 chat / 3 email / 3 phone -- perfectly
+  even'
+- Both the cause and the effect in the question are unevidenced
+acceptable_actions:
+- challenge
+prohibited_claims:
+- any claim about phone response times
+- any claim of a shift toward email in October
+assertions:
+- id: oct_chat
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='chat' AND opened_at >=
+    '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 3
+- id: oct_email
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='email' AND opened_at >=
+    '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 3
+- id: oct_phone
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
+    '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 3
+- id: response_data_absent
+  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%first_response%'
+    OR name LIKE '%first_reply%'
+  expected: 0

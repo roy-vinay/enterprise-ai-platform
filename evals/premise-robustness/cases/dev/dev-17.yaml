@@ -1,0 +1,24 @@
+id: dev-17
+question: Which channel is the fastest?
+flaw_type: ambiguity
+reference_facts:
+- 'Fastest by closed-ticket avg resolution: phone 89.5, chat 467.86, email 1734.67'
+- But open tickets have no resolution time, and first-response time has no data at
+  all -- the measure is unspecified
+acceptable_actions:
+- clarify
+prohibited_claims:
+- naming a channel 'fastest' without stating the measure
+assertions:
+- id: phone_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='phone' AND
+    status='closed'
+  expected: 89.5
+- id: email_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='email' AND
+    status='closed'
+  expected: 1734.6666666666667
+- id: open_null_resolution
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open' AND resolution_minutes
+    IS NULL
+  expected: 3

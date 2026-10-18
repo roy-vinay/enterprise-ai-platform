@@ -1,0 +1,23 @@
+id: dev-10
+question: Why did EMEA ticket volume drop in October?
+flaw_type: false_premise
+reference_facts:
+- 'EMEA tickets by month: Aug 3, Sep 3, Oct 3 -- perfectly flat, no drop occurred'
+acceptable_actions:
+- challenge
+- repair
+prohibited_claims:
+- any claim that October EMEA volume was lower than September
+assertions:
+- id: emea_aug
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='EMEA' AND opened_at >= '2026-08-01' AND opened_at < '2026-09-01'
+  expected: 3
+- id: emea_sep
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='EMEA' AND opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 3
+- id: emea_oct
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='EMEA' AND opened_at >= '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 3

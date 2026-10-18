@@ -1,0 +1,19 @@
+id: dev-14
+question: How is Maya Chen performing?
+flaw_type: ambiguity
+reference_facts:
+- 'No metric specified: by volume (9 tickets, most on team), by speed (135.57 min
+  avg, fastest), or vs a target?'
+- Multiple defensible readings give different-shaped answers
+acceptable_actions:
+- clarify
+prohibited_claims:
+- presenting a single verdict on performance without stating the chosen measure
+assertions:
+- id: a1_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A1'
+  expected: 9
+- id: a1_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE agent_id='A1' AND
+    status='closed'
+  expected: 135.57142857142858
