@@ -1,5 +1,7 @@
 {
-  "status": "pending_vinay_approval",
-  "approved_by": null,
-  "responses_sha256": "f425e5b7daed846fd92b64ef4b22f5eaf6d7cc2b6ecc21ab5e759ddd53e7db14"
+  "status": "approved",
+  "approved_by": "Vinay",
+  "approved_on": "2026-10-18",
+  "responses_sha256": "f425e5b7daed846fd92b64ef4b22f5eaf6d7cc2b6ecc21ab5e759ddd53e7db14",
+  "approval_scope": "Response-set authoring approved by Vinay in chat. Human labels and acceptance-bar results remain pending."
 }
