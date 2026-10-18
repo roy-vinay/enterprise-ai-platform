@@ -1,0 +1,17 @@
+{
+  "reviewers": [
+    {
+      "name": "Vinay Roy",
+      "protocol_identifier": "Vinay",
+      "role": "reviewer_and_adjudicator"
+    },
+    {
+      "name": "Ben Gibson",
+      "protocol_identifier": "Ben Gibson",
+      "role": "independent_reviewer"
+    }
+  ],
+  "response_set_approval": "pending",
+  "labeling_status": "not_started",
+  "independence_requirement": "Reviewers label separately without discussing answers or viewing each other's sheets. Naming reviewers does not attest that labeling has occurred."
+}
