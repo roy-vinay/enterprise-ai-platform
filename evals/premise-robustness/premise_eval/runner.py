@@ -49,11 +49,34 @@ def manifest_sha256() -> str:
 
 def check_heldout_ready() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    if manifest.get("status") == "placeholder":
+    if manifest.get("status") != "frozen" or not manifest.get("cases"):
         raise HeldoutNotReadyError(
-            "held-out set is a placeholder: author it in a separate pass, "
-            "freeze the manifest, then run --split heldout"
+            "held-out set is not frozen and nonempty: author it separately, "
+            "review the case hashes, then freeze the manifest"
         )
+    root = (CASES_ROOT / "heldout").resolve()
+    actual = {p.name for p in root.glob("*.yaml")}
+    listed = set()
+    ids = set()
+    for entry in manifest["cases"]:
+        if not isinstance(entry, dict):
+            raise HeldoutNotReadyError("manifest cases must contain path, id, and sha256")
+        name = entry.get("path", "")
+        if not isinstance(name, str) or Path(name).name != name or not name.endswith(".yaml"):
+            raise HeldoutNotReadyError("manifest paths must be local YAML filenames")
+        path = root / name
+        if name in listed or not path.is_file() or path.is_symlink():
+            raise HeldoutNotReadyError("manifest contains duplicate, missing, or linked cases")
+        listed.add(name)
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        case = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(case, dict) or not case.get("id") or case["id"] in ids:
+            raise HeldoutNotReadyError("held-out case IDs must be present and unique")
+        ids.add(case["id"])
+        if digest != entry.get("sha256") or case["id"] != entry.get("id"):
+            raise HeldoutNotReadyError(f"held-out case differs from frozen manifest: {name}")
+    if listed != actual:
+        raise HeldoutNotReadyError("manifest must cover every held-out YAML case exactly once")
 
 
 def run(split: str, model_name: str, arm: str, db_path: Path | str) -> dict:
@@ -85,6 +108,7 @@ def run(split: str, model_name: str, arm: str, db_path: Path | str) -> dict:
                 {
                     "case_id": case["id"],
                     "flaw_type": case["flaw_type"],
+                    "response_text": response["response_text"],
                     "behavior_tag": response["behavior_tag"],
                     "claims": claims,
                     "claim_verification": claim_check,
@@ -96,6 +120,13 @@ def run(split: str, model_name: str, arm: str, db_path: Path | str) -> dict:
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "run_kind": "scripted_smoke_test",
+        "research_results": False,
+        "limitations": [
+            "Scripted responses and a stub judge; metrics are pipeline checks only.",
+            "Prompt arms are labels only; the fake model does not execute prompts or SQL tools.",
+            "Assertion checks validate declared claims, not every claim in response text or model provenance.",
+        ],
         "versions": {
             "dataset": versions.DATASET_VERSION,
             "dataset_seed": versions.DATASET_SEED_NOTE,
@@ -105,7 +136,16 @@ def run(split: str, model_name: str, arm: str, db_path: Path | str) -> dict:
             "model_version": versions.MODEL_VERSION,
             "case_set": versions.CASE_SET_VERSION,
             "heldout_manifest_sha256": manifest_sha256(),
-            "harness": f"premise_eval {db_mod.__package__} v0.1",
+            "harness": "premise_eval v0.1",
+            "input_sha256": {
+                str(p.relative_to(PKG_ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sorted([
+                    * (CASES_ROOT / split).glob("*.yaml"),
+                    * (PKG_ROOT / "prompts").glob("*.md"),
+                    db_mod.SCHEMA_SQL, db_mod.SEED_SQL,
+                    PKG_ROOT / "models" / "fake_model.py",
+                ])
+            },
         },
         "split": split,
         "metrics": metrics_mod.compute_metrics(judgments),
