@@ -73,7 +73,8 @@ def test_ollama_fixed_options_and_digest(monkeypatch):
     monkeypatch.setattr(backend, '_request', request)
     backend.complete([], {})
     payload = next(body for path, body in requests if path == '/api/chat')
-    assert payload['options'] == {'temperature': 0, 'seed': 17} and payload['stream'] is False
+    assert payload['options'] == {'temperature': 0, 'seed': 17, 'num_ctx': 8192, 'num_predict': 512}
+    assert payload['stream'] is False and payload['think'] is False
     monkeypatch.setattr(backend, '_request', lambda *a: {'models': [{'name': backend.model, 'digest': 'changed'}]})
     with pytest.raises(ValueError, match='digest changed'): backend.identity()
 
@@ -127,15 +128,17 @@ def test_csv_strict_and_adjudication(tmp_path, monkeypatch):
     with pytest.raises(ValueError): adjudicate.read_sheet(a, ['unit'])
 
 
-def test_draft_balanced_and_approval_blocks():
+def test_draft_balanced_and_approval_blocks(tmp_path):
     from collections import Counter
     import yaml
     rows = common.responses()
     counts = Counter(yaml.safe_load((common.ROOT / 'cases/dev' / (r['case_id'] + '.yaml')).read_text())['flaw_type'] for r in rows)
     assert len(counts) == 6 and set(counts.values()) == {10}
     assert all('gold' not in r and 'judgment' not in r for r in rows)
-    with pytest.raises(ValueError): common.require_approval()
-    with pytest.raises((OSError, ValueError)): score_judge.score(backend=Backend([]))
+    (tmp_path / 'responses.jsonl').write_text((common.HERE / 'responses.jsonl').read_text())
+    (tmp_path / 'approval.json').write_text('{"status":"pending"}')
+    with pytest.raises(ValueError): common.require_approval(tmp_path)
+    with pytest.raises((OSError, ValueError)): score_judge.inputs(directory=tmp_path)
 
 
 def test_gate_recomputes_saved_predictions(tmp_path, monkeypatch):
@@ -187,3 +190,17 @@ def test_scoring_writes_failed_report_without_lowering_bar(tmp_path, monkeypatch
     assert report['status'] == 'failed'  # missing action/flaw category coverage
     assert json.loads(path.read_text())['results']['passed'] is False
     assert path.with_suffix('.md').exists()
+
+
+def test_agent_adjudication_provenance(tmp_path, monkeypatch):
+    monkeypatch.setattr(adjudicate, 'require_approval', lambda directory: [{'response_id': 'unit'}])
+    (tmp_path / 'responses.jsonl').write_text('synthetic unit data')
+    a, b, r = [tmp_path / n for n in ('a.csv', 'b.csv', 'r.csv')]
+    sheet(a, {'unit': label()}); sheet(b, {'unit': dict(label(), action_taken='challenge')})
+    sheet(r, {'unit': label()})
+    adjudicate.adjudicate(a, b, 'Agent A', 'Agent B', resolutions=r,
+        resolved_by='AI adjudicator', directory=tmp_path, protocol='agent_reference')
+    provenance = json.loads((tmp_path / 'gold-provenance.json').read_text())
+    assert provenance['reference_protocol'] == 'agent_reference'
+    assert provenance['human_validated'] is False
+    assert provenance['reference_type'] == 'agent_generated_reference'
