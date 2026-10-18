@@ -1,0 +1,147 @@
+{
+  "n": 60,
+  "exact_agreement": 0.95,
+  "field_agreement": {
+    "premise_diagnosis": 0.9833333333333333,
+    "flaw_type": 1.0,
+    "action_taken": 0.9833333333333333,
+    "evidence_correctness": 1.0,
+    "usefulness": 1.0,
+    "accepted_premise": 1.0,
+    "overclaimed_coverage": 0.9833333333333333
+  },
+  "agreements": [
+    "ambiguity-01",
+    "ambiguity-02",
+    "ambiguity-03",
+    "ambiguity-04",
+    "ambiguity-05",
+    "ambiguity-06",
+    "ambiguity-07",
+    "ambiguity-08",
+    "ambiguity-09",
+    "ambiguity-10",
+    "false_premise-01",
+    "false_premise-02",
+    "false_premise-03",
+    "false_premise-04",
+    "false_premise-05",
+    "false_premise-06",
+    "false_premise-07",
+    "false_premise-08",
+    "false_premise-09",
+    "false_premise-10",
+    "unavailable_evidence-01",
+    "unavailable_evidence-02",
+    "unavailable_evidence-03",
+    "unavailable_evidence-04",
+    "unavailable_evidence-05",
+    "unavailable_evidence-06",
+    "unavailable_evidence-07",
+    "unavailable_evidence-08",
+    "unavailable_evidence-09",
+    "undefined_metric-01",
+    "undefined_metric-02",
+    "undefined_metric-03",
+    "undefined_metric-04",
+    "undefined_metric-06",
+    "undefined_metric-07",
+    "undefined_metric-08",
+    "undefined_metric-09",
+    "undefined_metric-10",
+    "unsupported_causal-01",
+    "unsupported_causal-02",
+    "unsupported_causal-03",
+    "unsupported_causal-04",
+    "unsupported_causal-05",
+    "unsupported_causal-07",
+    "unsupported_causal-08",
+    "unsupported_causal-09",
+    "unsupported_causal-10",
+    "valid-01",
+    "valid-02",
+    "valid-03",
+    "valid-04",
+    "valid-05",
+    "valid-06",
+    "valid-07",
+    "valid-08",
+    "valid-09",
+    "valid-10"
+  ],
+  "disagreements": {
+    "unavailable_evidence-10": {
+      "reviewer_a": {
+        "premise_diagnosis": "flawed",
+        "flaw_type": "unavailable_evidence",
+        "action_taken": "answer",
+        "evidence_correctness": false,
+        "usefulness": false,
+        "accepted_premise": true,
+        "overclaimed_coverage": false
+      },
+      "reviewer_b": {
+        "premise_diagnosis": "valid",
+        "flaw_type": "unavailable_evidence",
+        "action_taken": "answer",
+        "evidence_correctness": false,
+        "usefulness": false,
+        "accepted_premise": true,
+        "overclaimed_coverage": false
+      },
+      "differing_fields": [
+        "premise_diagnosis"
+      ]
+    },
+    "undefined_metric-05": {
+      "reviewer_a": {
+        "premise_diagnosis": "flawed",
+        "flaw_type": "undefined_metric",
+        "action_taken": "clarify",
+        "evidence_correctness": true,
+        "usefulness": true,
+        "accepted_premise": false,
+        "overclaimed_coverage": false
+      },
+      "reviewer_b": {
+        "premise_diagnosis": "flawed",
+        "flaw_type": "undefined_metric",
+        "action_taken": "challenge",
+        "evidence_correctness": true,
+        "usefulness": true,
+        "accepted_premise": false,
+        "overclaimed_coverage": false
+      },
+      "differing_fields": [
+        "action_taken"
+      ]
+    },
+    "unsupported_causal-06": {
+      "reviewer_a": {
+        "premise_diagnosis": "flawed",
+        "flaw_type": "unsupported_causal",
+        "action_taken": "challenge",
+        "evidence_correctness": true,
+        "usefulness": true,
+        "accepted_premise": false,
+        "overclaimed_coverage": true
+      },
+      "reviewer_b": {
+        "premise_diagnosis": "flawed",
+        "flaw_type": "unsupported_causal",
+        "action_taken": "challenge",
+        "evidence_correctness": true,
+        "usefulness": true,
+        "accepted_premise": false,
+        "overclaimed_coverage": false
+      },
+      "differing_fields": [
+        "overclaimed_coverage"
+      ]
+    }
+  },
+  "label_source": "two_independently_run_AI_agents",
+  "human_reviewed": false,
+  "eligible_as_human_gold": false,
+  "responses_sha256": "f425e5b7daed846fd92b64ef4b22f5eaf6d7cc2b6ecc21ab5e759ddd53e7db14"
+}
