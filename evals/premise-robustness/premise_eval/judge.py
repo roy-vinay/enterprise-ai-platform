@@ -42,10 +42,21 @@ def judge_stub(case: dict, behavior_tag: str, evidence_ok: bool) -> dict:
     }
 
 
-JUDGE_VERSION = "judge-v1"
+JUDGE_VERSION = "judge-v2"
 
 
-def judge(response_text, case, evidence_report, *, backend=None):
+def prompt_version(config=None):
+    from pathlib import Path
+    import yaml
+    root = Path(__file__).resolve().parent.parent
+    settings = yaml.safe_load(Path(config or root / "validation/judge-config.yaml").read_text())
+    version = settings.get("judge-prompt", "judge-v2")
+    if version not in {"judge-v1", "judge-v2"}:
+        raise ValueError("Unknown judge prompt version")
+    return version
+
+
+def judge(response_text, case, evidence_report, *, backend=None, config=None, version=None):
     """Grade behavior with up to two retries; malformed output stays ungraded."""
     import json
     from pathlib import Path
@@ -57,9 +68,12 @@ def judge(response_text, case, evidence_report, *, backend=None):
     if evidence_report.get("stale_ground_truth"):
         raise ValueError("Stale ground truth must be repaired before judging")
     root = Path(__file__).resolve().parent.parent
-    prompt = (root / "prompts/judge-v1.md").read_text()
+    version = version or prompt_version(config)
+    if version not in {"judge-v1", "judge-v2"}:
+        raise ValueError("Unknown judge prompt version")
+    prompt = (root / "prompts" / (version + ".md")).read_text()
     rubric = (root / "RUBRIC.md").read_text()
-    backend = backend or load_backend()
+    backend = backend or load_backend(config)
     identity = backend.identity()
     # Never expose author notes, candidate behavior tags, or human gold labels.
     context = {k: case[k] for k in ("id", "question", "flaw_type", "reference_facts",
@@ -75,10 +89,10 @@ def judge(response_text, case, evidence_report, *, backend=None):
             if evidence_report["passed"] is False and result["evidence_correctness"]:
                 raise ValueError("Judge contradicted failed deterministic verification")
             return dict(graded=True, judgment=result, attempts=attempt + 1,
-                        judge_version=JUDGE_VERSION, model=identity)
+                        judge_version=version, model=identity)
         except (ValueError, TypeError, KeyError) as exc:
             errors.append(str(exc))
             messages.append(dict(role="user", content="Output failed schema/verification checks: "
                 + str(exc) + ". Return only a complete corrected JSON object."))
     return dict(graded=False, reason="; ".join(errors), attempts=3,
-                judge_version=JUDGE_VERSION, model=identity)
+                judge_version=version, model=identity)

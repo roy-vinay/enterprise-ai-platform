@@ -1,0 +1,18 @@
+{
+  "reference_type": "agent_generated_reference",
+  "human_validated": false,
+  "dry_run_only": true,
+  "responses_sha256": "e187c34c79da9c5d0aec159976bb34ba50c9f7e8063733f20b518ffe9e36b032",
+  "references_sha256": "089a62f16519eab4e472621eb863ac8a296a17f74a2a53526ce5cd6fd1bc39f6",
+  "original_references_sha256": "56bd8e1093c62941b2079a2d622ec96e70a0be12c10253685e64be380410f411",
+  "original_count": 60,
+  "added_count": 8,
+  "original_method": "Two separate agents with AI adjudication; see archive-v1 provenance.",
+  "addition_method": "Eight labels authored by the implementing assistant against case facts and rubric. Not independent of response authoring; no second labeling pass.",
+  "limitations": [
+    "Original references reused unchanged; additions are author-generated agent references, not independent gold.",
+    "Prompt examples target known failure patterns. This is development feedback, not held-out validation.",
+    "The flaw category is provided as context.",
+    "Same assistant environment can introduce correlated errors."
+  ]
+}

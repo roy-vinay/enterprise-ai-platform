@@ -26,8 +26,10 @@ def write_json(path, value):
 
 def responses(directory=HERE):
     rows = read_jsonl(Path(directory) / 'responses.jsonl')
-    if len(rows) != 60 or len({r['response_id'] for r in rows}) != 60:
-        raise ValueError('Exactly 60 responses with unique IDs are required')
+    manifest = Path(directory) / 'responses-v2-manifest.json'
+    expected = json.loads(manifest.read_text())['count'] if manifest.exists() else 60
+    if len(rows) != expected or len({r['response_id'] for r in rows}) != expected:
+        raise ValueError('Response count and unique IDs must match the versioned manifest')
     for row in rows:
         if not all(isinstance(row.get(k), str) and row[k].strip()
                    for k in ('response_id', 'case_id', 'response_text', 'author_note')):
@@ -48,7 +50,11 @@ def require_approval(directory=HERE):
 
 
 def fingerprints():
-    files = [ROOT / 'prompts/judge-v1.md', ROOT / 'RUBRIC.md',
+    files = [ROOT / 'prompts/judge-v1.md', ROOT / 'prompts/judge-v2.md', ROOT / 'RUBRIC.md',
+             HERE / 'responses-v2-manifest.json', HERE / 'agent-reference-v2.jsonl',
+             HERE / 'agent-reference-v2-provenance.json', HERE / 'approval.json',
+             HERE / 'archive-v1/responses.jsonl', HERE / 'archive-v1/gold.jsonl',
+             ROOT / 'reports/judge-validation-v1.json',
              HERE / 'protocol.yaml', HERE / 'responses.jsonl', HERE / 'judge-config.yaml', HERE / 'thresholds.yaml',
              HERE / 'score_judge.py', HERE / 'common.py', HERE / 'adjudicate.py',
              ROOT / 'premise_eval/judge.py', ROOT / 'premise_eval/judgment.py',

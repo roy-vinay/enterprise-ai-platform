@@ -132,7 +132,7 @@ def test_draft_balanced_and_approval_blocks(tmp_path):
     from collections import Counter
     import yaml
     rows = common.responses()
-    counts = Counter(yaml.safe_load((common.ROOT / 'cases/dev' / (r['case_id'] + '.yaml')).read_text())['flaw_type'] for r in rows)
+    counts = Counter(yaml.safe_load((common.ROOT / 'cases/dev' / (r['case_id'] + '.yaml')).read_text())['flaw_type'] for r in rows[:60])
     assert len(counts) == 6 and set(counts.values()) == {10}
     assert all('gold' not in r and 'judgment' not in r for r in rows)
     (tmp_path / 'responses.jsonl').write_text((common.HERE / 'responses.jsonl').read_text())
@@ -157,7 +157,7 @@ def test_gate_recomputes_saved_predictions(tmp_path, monkeypatch):
     monkeypatch.setattr(score_judge, 'fingerprints', lambda: {'frozen': 'hash'})
     monkeypatch.setattr(score_judge, 'sha', lambda path: 'hash')
     backend = Backend([])
-    report = dict(status='passed', results=result, predictions=predictions,
+    report = dict(status='passed', judge_version=judge.prompt_version(), results=result, predictions=predictions,
         input_sha256={'frozen': 'hash'}, gold_sha256='hash', approval_sha256='hash',
         gold_provenance_sha256='hash', model=backend.identity())
     path = tmp_path / 'report.json'

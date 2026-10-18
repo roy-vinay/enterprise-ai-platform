@@ -105,7 +105,7 @@ def run(
         from .backends import load_backend
         from validation.score_judge import require_validated
         backend = load_backend(judge_config)
-        require_validated(backend)
+        require_validated(backend, config=judge_config)
     if split == "heldout" and judge_name != "llm":
         raise ValueError("Held-out runs require a validated LLM judge")
     if model_name != "fake":
@@ -139,7 +139,7 @@ def run(
                 judgment = judge_mod.judge_stub(case, response["behavior_tag"], claim_check["passed"])
             else:
                 evidence = dict(claim_check, declared_claims=claims)
-                result = judge_mod.judge(response["response_text"], case, evidence, backend=backend)
+                result = judge_mod.judge(response["response_text"], case, evidence, backend=backend, config=judge_config)
                 if not result["graded"]:
                     raise ValueError("Ungraded judge output: " + result["reason"])
                 judgment = result["judgment"]
@@ -175,9 +175,9 @@ def run(
             "prompt_version": versions.PROMPT_VERSIONS[arm],
             "model": model_name,
             "model_version": versions.MODEL_VERSION,
-            "judge_version": judge_mod.JUDGE_VERSION if judge_name == "llm" else "stub-v1",
+            "judge_version": judge_mod.prompt_version(judge_config) if judge_name == "llm" else "stub-v1",
             "judge_model": backend.identity() if backend else "scripted-stub",
-            "judge_prompt_sha256": hashlib.sha256((PKG_ROOT / "prompts/judge-v1.md").read_bytes()).hexdigest(),
+            "judge_prompt_sha256": hashlib.sha256((PKG_ROOT / "prompts" / ((judge_mod.prompt_version(judge_config) if judge_name == "llm" else "judge-v1") + ".md")).read_bytes()).hexdigest(),
             "case_set": versions.CASE_SET_VERSION,
             "heldout_manifest_sha256": manifest_sha256(),
             "harness": "premise_eval v0.1",

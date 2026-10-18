@@ -16,7 +16,7 @@ run-heldout:
 	python3 -m premise_eval.runner --split heldout --model fake --arm ordinary
 
 judge-validate:
-	python3 -m validation.score_judge
+	python3 -m validation.score_judge $(JUDGE_ARGS)
 
 judge-validate-sample:
 	python3 -m validation.sample

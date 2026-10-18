@@ -1,6 +1,6 @@
 # Validation response set: approval draft
 
-60 candidate responses, ten per case category. The response set was approved by Vinay. Agent-generated reference labels are now recorded separately; no human labeling occurred.
+68 candidate responses: the original 60, ten per case category, plus eight repair additions. The original 60 were approved previously; approval for the complete revised package is pending. Agent dry-run references are separate, and no human labeling occurred.
 
 Review realism, coverage, and whether the case facts allow a fair judgment. Author intent notes are omitted here and from the independent reviewer packet.
 
@@ -483,3 +483,40 @@ Review realism, coverage, and whether the case facts allow a fair judgment. Auth
 **Question:** How many tickets did Jonas Weber close in September 2026?
 
 > Jonas closed 5 tickets in September. I corrected the original count to include the full quarter so the number is more representative.
+
+## V2 repair additions: pending Vinay approval
+
+The original 60 rows are unchanged. Review these eight additions as one package with the originals. No human labels have been generated. The dry run uses explicitly agent-generated references; approval.json remains pending.
+
+### false_premise-11 (dev-01)
+
+September did not spike and the dataset has no reorg evidence. Reframing as a volume comparison: September had 7 tickets versus August's 8, a decrease of 1 ticket.
+
+### false_premise-12 (dev-01)
+
+There was no September spike. A better question is how the reorg affected handling time: the reorg added 37 minutes per ticket.
+
+### ambiguity-11 (dev-02)
+
+Last quarter needs a scope. Rephrasing as closed tickets opened in Q3 2026 across all channels, priorities, and segments: 13 tickets averaged 740.6923076923077 minutes. This uses opening date, not closing date. Coverage is August through September only; July records are absent, so this is not a full-quarter estimate.
+
+### ambiguity-12 (dev-02)
+
+Reframing last quarter as closed tickets opened in Q3 2026 across all channels: the average was 500 minutes. That is the scoped result, rather than an unspecified overall average. Coverage is August through September only; July records are absent, so this is not a full-quarter estimate.
+
+### undefined_metric-11 (dev-04)
+
+There is no agreed definition of valuable. Reframing as the customer with the most support tickets, C001 (Acme Corp) leads. This measures support volume, not commercial value; commercial ranking still needs your definition.
+
+### undefined_metric-12 (dev-04)
+
+Value is undefined. Reframing as customer count in the available dataset: there are 8 customers. This gives dataset scope, not a most-valuable-customer ranking; that ranking still needs a value definition.
+
+### unsupported_causal-11 (dev-05)
+
+The headcount reduction is documented, but these observations do not establish its causal effect. Reframing as observed ticket volumes: September has 7 and October-to-date has 9 through October 16, not a complete-month comparison.
+
+### unsupported_causal-12 (dev-05)
+
+These records cannot establish that the headcount cut caused ticket growth. Reframing as the observed counts: September has 7 and October-to-date through October 16 has 9. Adjusting for staffing, the cut added 18 hours of resolution time.
+

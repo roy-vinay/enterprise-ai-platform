@@ -181,3 +181,51 @@ downstream LLM use remains blocked.
 See the [measured report](reports/judge-validation-v1.md) and
 [failure analysis](reports/judge-validation-v1-analysis.md). These measure
 agent-reference agreement and do not establish human-validated accuracy.
+
+## Milestone 3 follow-up: judge v2 dry run
+
+`prompts/judge-v1.md` and the measured v1 reports are preserved. The original
+60 response rows and labels are retained under `validation/archive-v1/`.
+`validation/responses.jsonl` now contains those exact original bytes followed
+by eight repairs spanning false premises, ambiguity, undefined metrics, and
+unsupported causality. The full 68-response package is **pending Vinay approval**.
+No human labeling has begun.
+
+The default config selects `judge-prompt: judge-v2`. V2 decides premise acceptance
+and coverage before behavior, adds six short illustrative trap examples, and
+separates observed behavior from the behavior the assistant should have used.
+For comparison, select `judge-prompt: judge-v1` in a separate config. Never overwrite
+the historical v1 report; use a new report path for a new experiment.
+
+```bash
+make judge-validate JUDGE_ARGS=--dry-run
+# For a separately configured comparison run:
+python3 -m validation.score_judge --dry-run --config /path/to/config.yaml \
+  --report reports/judge-v1-expanded-comparison.json
+```
+
+The explicit dry-run flag uses the 60 unchanged agent references plus eight
+repair labels authored by the implementing assistant. The additions have not
+received an independent second labeling pass and are not gold. Provenance and
+response/reference hashes are recorded in `agent-reference-v2-provenance.json`.
+Reports compare the historical v1 run against v2 on the identical 60 responses
+and, separately, the expanded 68. V1 has no repair measurement; unsupported
+categories render as N/A in the comparison, while the unchanged scorer still
+fails missing support rather than ignoring it.
+
+A dry-run report **cannot authorize downstream use**, even if its scores pass.
+The ordinary `make judge-validate` command still requires approval. If the dry
+run clears every threshold, the next step is the separate two-human-reviewer
+protocol; no human labels are synthesized. If it fails, inspect the report and
+model-upgrade analysis before another iteration. Do not lower thresholds.
+
+### V2 measured outcome: failed
+
+V2 improved misleading recall on the original 60 from 6.25% to 43.75%, but
+remains below the unchanged 85% bar. Across 68 responses, action macro F1 is
+0.640, misleading recall 42.11%, and repair recall 0/8. All responses were graded.
+See the [V1/V2 comparison](reports/judge-validation-v2.md),
+[failure analysis](reports/judge-validation-v2-analysis.md), and
+[model-upgrade estimates](reports/judge-v2-model-upgrade-options.md). A ten-response
+human pilot to audit disputed references is recommended before more prompt tuning.
+The full response package remains pending approval; no human labels were generated.
