@@ -11,7 +11,8 @@
       "role": "independent_reviewer"
     }
   ],
-  "response_set_approval": "pending",
+  "response_set_approval": "approved",
   "labeling_status": "not_started",
-  "independence_requirement": "Reviewers label separately without discussing answers or viewing each other's sheets. Naming reviewers does not attest that labeling has occurred."
+  "independence_requirement": "Reviewers label separately without discussing answers or viewing each other's sheets. Naming reviewers does not attest that labeling has occurred.",
+  "responses_sha256": "f425e5b7daed846fd92b64ef4b22f5eaf6d7cc2b6ecc21ab5e759ddd53e7db14"
 }
