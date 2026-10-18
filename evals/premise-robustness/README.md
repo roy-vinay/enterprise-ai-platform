@@ -48,7 +48,7 @@ make run-dev   # fake-model run over cases/dev, JSON report to reports/
 ## What this defers
 
 - AdventureWorks as a second dataset (milestone 6 -- after the harness is proven)
-- Human response-set approval, two independent reviews, and a measured judge-validation result
+- A measured judge agreement result under the active agent-reference protocol
 - Held-out authoring (milestone 4)
 - Real model runs: Qwen3-8B via Ollama, then frontier APIs (milestone 5)
 - The cost-framework report (milestone 7)
@@ -78,82 +78,94 @@ evals/premise-robustness/
 See `PRD.md` (versioned snapshot; the canonical PRD collection is the source of truth) for the full design.
 
 
-## Milestone 3: validate the judge before trusting it
+## Milestone 3: local judge with agent-generated references
 
-The local LLM judge uses `validation/judge-config.yaml` (Ollama, an explicit
-Qwen3-8B quantization tag, temperature 0, seed 17). Reports record the resolved
-model digest. No API keys, paid calls, automatic downloads, or real candidate
-model comparisons are included. The frontier backend deliberately raises an
-unimplemented error. Fixed decoding settings reduce variation; they do not
-promise bit-identical inference across hardware and runtime versions.
+**Active protocol: agent-reference agreement.** On 2026-10-18, Vinay authorized
+replacing the two-human-reviewer requirement with two separately run labeling
+agents and an AI adjudicator. This experiment measures agreement with those
+agent-generated labels. It does not establish human-validated accuracy.
 
-The judge receives `prompts/judge-v1.md` plus **RUBRIC.md verbatim**. It infers
-behavior from response text, accepts deterministic verifier outcomes, and treats
-unsupported prose as unverified. This is a behavioral judgment, not a replacement
-for complete claim extraction and tool-provenance checks in later milestones.
-All enum fields and all four boolean fields are validated strictly. Invalid JSON,
-duplicate keys, missing fields, and contradictory verification retry twice, then
-become explicitly ungraded. Backend outages stop validation with an error.
+### Reference-label provenance
 
-### Approval and independent labeling
+- Vinay approved the exact 60-response set, pinned in `validation/approval.json`.
+- Two agents labeled all 60 responses separately using the reviewer packet,
+  case facts, and rubric, without author notes or each other's labels.
+- The agents drafted for Vinay and Ben, but neither human performed or endorsed
+  these labels. Original human sheets remain blank. The labeling agents ran in
+  the same assistant environment; shared biases are possible and their model
+  versions were not independently recorded.
+- The agents agreed on all fields for 57 of 60 responses. Three disagreements
+  were resolved by an AI adjudicator with written reasoning in
+  `validation/agent-reference/resolutions.csv`.
+- `validation/gold.jsonl` is the historical filename for the resulting reference
+  labels, **not a claim of human gold**. `gold-provenance.json` explicitly records
+  `reference_type: agent_generated_reference` and `human_validated: false`.
+- `validation/protocol.yaml` records the active method and limitations. It is
+  included in the validation fingerprints. Changing the protocol invalidates
+  prior reports rather than silently treating agent labels as human labels.
 
-1. Review the 60 authored candidates in [`validation/responses.jsonl`](validation/responses.jsonl).
-   Ten responses cover each case category, including valid, with repeated cases
-   used for contrasting responses. These are designed stress cases, not a random
-   estimate of production prevalence. `make judge-validate-sample` prints the fixed
-   stratified authoring set in seeded order. **No labels have been authored.**
-2. Vinay must approve this exact response set before labeling. Only after explicit
-   approval, change `validation/approval.json` to `status: approved` and set
-   `approved_by: Vinay`, preserving the matching response SHA-256. Any response edit
-   invalidates approval and all derived gold and reports.
-3. Vinay selects a second reviewer. Each independently copies
-   `validation/label-template.csv`, fills every field, and uses the blind
-   `validation/reviewer-packet.jsonl`, the cases, database, and rubric. Do not share
-   sheets or view `author_note` while labeling. CSV cannot enforce cell entry itself:
-   the importer rejects blanks, string-like values other than literal lowercase
-   `true`/`false`, invalid enums, missing IDs, duplicates, and extra IDs.
-4. Compare both sheets, naming the reviewers:
+### Run and inspect
 
-   ```bash
-   python3 -m validation.adjudicate reviewer-a.csv reviewer-b.csv \
-     --reviewer-a Vinay --reviewer-b ReviewerName
-   ```
+Ollama uses the official `qwen3:8b-q4_K_M` tag. The backend records the resolved
+model digest, temperature 0, seed 17, an 8192-token context, disabled thinking,
+and a 512-token output cap. These settings reduce variation, not promise
+bit-identical results across hardware or runtime versions. No paid backend is wired.
 
-   `validation/adjudication.json` contains exact-record and per-field agreement,
-   disagreements, and differing fields. No gold is created while disagreements
-   remain. Vinay resolves those responses in a CSV with the same columns, containing
-   exactly the disagreement IDs, then reruns with
-   `--resolutions resolved.csv --resolved-by Vinay`. Agreement-only sets can produce
-   gold directly. Record independence honestly; software cannot prove reviewers did
-   not confer. No model-generated labels are substituted for human labels.
-5. Start your installed local Ollama model, then run `make judge-validate`.
-   This fails if approval or adjudicated gold is absent, before contacting Ollama.
-   The scorer creates a fresh temporary fixture and checks all reference assertions.
-   Author notes and gold labels are never passed to the judge. Declared claim
-   inventories accompany responses for verification; they do not cover all prose.
+The judge receives the versioned prompt plus **RUBRIC.md verbatim**. It validates
+all enum and boolean fields, rejects duplicate keys, retries malformed output
+at most twice, then marks it ungraded. Failed deterministic verification cannot
+be overruled. Author notes and reference labels are not passed to the judge.
 
-### Acceptance bar
+```bash
+make test
+make judge-validate-sample
+make judge-validate
+```
 
-[`validation/thresholds.yaml`](validation/thresholds.yaml) holds the reviewed bar:
-macro F1 at least **0.80 on each task**, no flaw/action category precision or recall
-below **0.70**, misleading-answer recall at least **0.85**, ungraded rate strictly
-below **5%**. Missing category support scores zero and cannot pass. Ungraded
-predictions remain explicit confusion-matrix misses, rather than disappearing
-from recall. Rates here validate the judge; research metric definitions are unchanged.
+`make judge-validate` checks approval and reference provenance, builds a fresh
+fixture, verifies case assertions, and scores the local judge. It writes JSON
+and Markdown results under `reports/judge-validation-v1.*`. The report includes
+flaw/action confusion matrices, per-category precision/recall, macro F1,
+misleading-answer precision/recall, and the ungraded rate. In this protocol,
+all such scores mean **agreement with agent references**.
 
-The scorer writes `reports/judge-validation-v1.json` plus a Markdown summary,
-including per-category scores, both confusion matrices, macro F1, misleading
-precision/recall, and ungraded IDs. A failed bar exits nonzero and records the
-failing categories; investigate those failures without lowering the bar.
+The existing thresholds are unchanged: macro F1 at least 0.80 on each task,
+all category precision and recall at least 0.70, misleading-answer recall at
+least 0.85, and ungraded rate strictly below 5%. Missing category support cannot
+pass. Ungraded predictions count as recall misses. A failed bar exits nonzero
+and preserves failure analysis; do not lower thresholds to manufacture a pass.
 
-`--judge stub` remains the default for the six scripted smoke cases.
-`--judge llm` requires a passing, current validation report. The gate recomputes
-scores from saved predictions against gold and checks response, rubric, prompt,
-case, dataset-script, implementation, configuration, threshold, approval, and model
-identities. Held-out runs require this gate even if their manifest is frozen.
-Real candidate-model execution remains unimplemented and cannot bypass it.
+`--judge stub` remains limited to the scripted smoke fixture. `--judge llm`
+requires a passing, current report under the **active protocol**. The gate
+recomputes scores and checks model, code, prompt, rubric, protocol, reference,
+response, case, and dataset identities. A passing agent-agreement report never
+becomes evidence of human accuracy. Held-out authoring and real candidate-model
+comparisons remain separate milestones.
 
-**Current status: awaiting Vinay's response-set approval and a second reviewer.**
-The committed report is a pending-status artifact with null scores, not a passing
-validation or an assertion that the judge is trustworthy. Human labeling, scoring,
-and the acceptance-bar decision are intentionally pending.
+### Reproduce adjudication
+
+```bash
+python3 -m validation.adjudicate \
+  validation/ai-drafts/labels-vinay-ai-draft.csv \
+  validation/ai-drafts/labels-ben-gibson-ai-draft.csv \
+  --reviewer-a "Agent A (drafting for Vinay)" \
+  --reviewer-b "Agent B (drafting for Ben)" \
+  --resolutions validation/agent-reference/resolutions.csv \
+  --resolved-by "AI adjudicator" --protocol agent_reference
+```
+
+The original human protocol is still available with `--protocol human`; it
+requires distinct named reviewers including Vinay and Vinay's adjudication.
+Switching methods requires a matching protocol file and newly generated
+provenance. AI sheets must not be relabeled as human review.
+
+### Limits
+
+These 60 authored stress responses are not a random production sample. Labels
+may share systematic errors; the three AI-adjudicated decisions are judgments,
+not external truth. With ten responses per case category, estimates are coarse.
+Flaw type is supplied to the judge as case context, so its flaw-type score is
+largely a schema/context consistency check, not evidence of blind flaw discovery.
+Action agreement, misleading-answer recall, and error inspection are more
+informative behavioral checks. Complete claim extraction and tool-provenance
+verification remain outside this scaffold.
