@@ -1,0 +1,4 @@
+backend: ollama
+model: qwen3:8b-q4_K_M
+url: http://127.0.0.1:11434
+timeout: 120
