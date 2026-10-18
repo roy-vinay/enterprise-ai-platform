@@ -1,0 +1,5 @@
+macro_f1: 0.80
+category_precision: 0.70
+category_recall: 0.70
+misleading_recall: 0.85
+ungraded_rate_below: 0.05
