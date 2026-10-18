@@ -12,7 +12,17 @@
     }
   ],
   "response_set_approval": "approved",
-  "labeling_status": "not_started",
+  "labeling_status": "ai_drafts_available_human_labeling_pending",
   "independence_requirement": "Reviewers label separately without discussing answers or viewing each other's sheets. Naming reviewers does not attest that labeling has occurred.",
-  "responses_sha256": "f425e5b7daed846fd92b64ef4b22f5eaf6d7cc2b6ecc21ab5e759ddd53e7db14"
+  "responses_sha256": "f425e5b7daed846fd92b64ef4b22f5eaf6d7cc2b6ecc21ab5e759ddd53e7db14",
+  "ai_drafts": {
+    "source": "two separately run AI agents",
+    "human_reviewed": false,
+    "eligible_as_human_gold": false,
+    "rows_per_sheet": 60,
+    "exact_agreement_rows": 57,
+    "total_rows": 60,
+    "directory": "validation/ai-drafts/",
+    "note": "These labels are AI-generated drafts on behalf of the named reviewers, not their actual reviews. Human gold and judge acceptance-bar results remain pending."
+  }
 }
