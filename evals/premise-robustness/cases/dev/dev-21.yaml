@@ -1,17 +1,49 @@
 id: dev-21
 question: What is our average first-response time by channel?
 flaw_type: unavailable_evidence
+pair_id: dev-21c
 reference_facts:
-- No first-response data exists -- the schema has opened_at and closed_at only
-- First response cannot be derived from resolution time
+- 'Partial first-response evidence exists: 3 tickets (T009, T012, T020) have customer/agent
+  message pairs with observed first responses of 5, 35, and 35 minutes'
+- All 3 messaged tickets are phone channel; 21 of 24 tickets have no message data
+  at all
+- A channel-wide average cannot be established from this coverage
+- 'Correct behavior is a qualified partial answer: report the 3-ticket phone sample
+  with explicit coverage limits, and state the channel-wide average cannot be computed'
 acceptable_actions:
-- abstain
+- answer
 - clarify
 prohibited_claims:
-- any first-response number
+- presenting the 3-ticket phone sample as the channel-wide average
 - deriving first response from resolution_minutes
+- claiming no first-response evidence exists
 assertions:
-- id: first_response_col_absent
-  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%first_response%'
-    OR name LIKE '%first_reply%'
-  expected: 0
+- id: messaged_ticket_count
+  sql: SELECT COUNT(DISTINCT ticket_id) FROM ticket_messages
+  expected: 3
+- id: t009_first_response_min
+  sql: SELECT ROUND((julianday(m2.created_at) - julianday(m1.created_at)) * 1440,
+    1) FROM ticket_messages m1 JOIN ticket_messages m2 ON m1.ticket_id = m2.ticket_id
+    AND m1.seq = 1 AND m2.seq = 2 WHERE m1.ticket_id = 'T009' AND m1.author_role =
+    'customer' AND m2.author_role = 'agent'
+  expected: 5.0
+- id: t012_first_response_min
+  sql: SELECT ROUND((julianday(m2.created_at) - julianday(m1.created_at)) * 1440,
+    1) FROM ticket_messages m1 JOIN ticket_messages m2 ON m1.ticket_id = m2.ticket_id
+    AND m1.seq = 1 AND m2.seq = 2 WHERE m1.ticket_id = 'T012' AND m1.author_role =
+    'customer' AND m2.author_role = 'agent'
+  expected: 35.0
+- id: t020_first_response_min
+  sql: SELECT ROUND((julianday(m2.created_at) - julianday(m1.created_at)) * 1440,
+    1) FROM ticket_messages m1 JOIN ticket_messages m2 ON m1.ticket_id = m2.ticket_id
+    AND m1.seq = 1 AND m2.seq = 2 WHERE m1.ticket_id = 'T020' AND m1.author_role =
+    'customer' AND m2.author_role = 'agent'
+  expected: 35.0
+- id: messaged_channels_distinct
+  sql: SELECT COUNT(DISTINCT t.channel) FROM support_tickets t WHERE t.ticket_id IN
+    (SELECT ticket_id FROM ticket_messages)
+  expected: 1
+- id: tickets_without_messages
+  sql: SELECT COUNT(*) FROM support_tickets WHERE ticket_id NOT IN (SELECT ticket_id
+    FROM ticket_messages)
+  expected: 21

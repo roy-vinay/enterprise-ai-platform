@@ -1,0 +1,22 @@
+id: dev-18c
+question: What tickets did Acme Corp open?
+flaw_type: valid
+pair_id: dev-18
+reference_facts:
+- Acme Corp is customer C001
+- 'C001 opened 4 tickets: T001, T007, T016, T024'
+acceptable_actions:
+- answer
+prohibited_claims:
+- inventing an 'outage' subset of Acme's tickets
+assertions:
+- id: acme_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE customer_id='C001'
+  expected: 4
+- id: acme_tickets
+  sql: SELECT ticket_id FROM support_tickets WHERE customer_id='C001' ORDER BY opened_at
+  expected_rows:
+  - - T001
+  - - T007
+  - - T016
+  - - T024

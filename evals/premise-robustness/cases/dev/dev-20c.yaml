@@ -1,0 +1,23 @@
+id: dev-20c
+question: Break down tickets by customer segment.
+flaw_type: valid
+pair_id: dev-20
+reference_facts:
+- 'Ticket counts by segment: Enterprise 7, Mid-Market 8, SMB 9'
+acceptable_actions:
+- answer
+prohibited_claims:
+- using employee count or any other meaning of 'size'
+assertions:
+- id: enterprise_count
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.segment='Enterprise'
+  expected: 7
+- id: midmarket_count
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.segment='Mid-Market'
+  expected: 8
+- id: smb_count
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.segment='SMB'
+  expected: 9

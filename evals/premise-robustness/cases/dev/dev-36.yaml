@@ -1,6 +1,7 @@
 id: dev-36
 question: Why did the September price increase drive P1 tickets up?
 flaw_type: unsupported_causal
+pair_id: dev-36c
 reference_facts:
 - P1s did rise Aug (1) -> Sep (2), which makes the causal story tempting
 - But no price data exists anywhere, and the question assumes the increase happened

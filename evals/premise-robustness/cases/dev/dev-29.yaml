@@ -1,6 +1,7 @@
 id: dev-29
 question: Show me the high-priority backlog.
 flaw_type: undefined_metric
+pair_id: dev-29c
 reference_facts:
 - '''High-priority'' is undefined (P1 only? P1+P2?) and ''backlog'' presumably means
   open tickets'

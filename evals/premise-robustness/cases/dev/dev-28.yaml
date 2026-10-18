@@ -1,6 +1,7 @@
 id: dev-28
 question: Which channel is the most effective?
 flaw_type: undefined_metric
+pair_id: dev-28c
 reference_facts:
 - '''Effective'' has no agreed definition and the readings diverge:'
 - by volume email leads (9 tickets) but it is the slowest (1734.67 min avg) and holds

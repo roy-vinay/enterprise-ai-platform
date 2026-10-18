@@ -1,6 +1,7 @@
 id: dev-13
 question: Why are we getting more P1 tickets every month?
 flaw_type: false_premise
+pair_id: dev-13c
 reference_facts:
 - 'P1 tickets by month: Aug 1, Sep 2, Oct 1 -- rose in September then fell in October;
   not ''every month'''

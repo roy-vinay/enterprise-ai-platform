@@ -1,0 +1,19 @@
+id: dev-10c
+question: How did EMEA ticket volume change from September to October 2026?
+flaw_type: valid
+pair_id: dev-10
+reference_facts:
+- 'EMEA tickets: 3 in September, 3 in October (flat)'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim of an October drop in EMEA volume
+assertions:
+- id: emea_sep
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='EMEA' AND opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 3
+- id: emea_oct
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='EMEA' AND opened_at >= '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 3

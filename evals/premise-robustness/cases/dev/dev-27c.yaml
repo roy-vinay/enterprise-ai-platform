@@ -1,0 +1,27 @@
+id: dev-27c
+question: Which customers opened tickets in October 2026?
+flaw_type: valid
+pair_id: dev-27
+reference_facts:
+- All 8 customers opened at least one ticket in October 2026
+acceptable_actions:
+- answer
+prohibited_claims:
+- naming any customer 'at risk of churning'
+assertions:
+- id: oct_customer_count
+  sql: SELECT COUNT(DISTINCT customer_id) FROM support_tickets WHERE opened_at >=
+    '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 8
+- id: oct_customers
+  sql: SELECT DISTINCT customer_id FROM support_tickets WHERE opened_at >= '2026-10-01'
+    AND opened_at < '2026-11-01' ORDER BY customer_id
+  expected_rows:
+  - - C001
+  - - C002
+  - - C003
+  - - C004
+  - - C005
+  - - C006
+  - - C007
+  - - C008

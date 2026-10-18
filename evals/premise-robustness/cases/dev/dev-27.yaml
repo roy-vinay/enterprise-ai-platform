@@ -1,6 +1,7 @@
 id: dev-27
 question: Which customers are at risk of churning based on their support history?
 flaw_type: unavailable_evidence
+pair_id: dev-27c
 reference_facts:
 - 'No churn signal is computable: no contract, MRR, health-score, or cancellation
   data exists'

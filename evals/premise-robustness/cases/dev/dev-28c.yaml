@@ -1,0 +1,18 @@
+id: dev-28c
+question: Rank channels by closed-ticket volume.
+flaw_type: valid
+pair_id: dev-28
+reference_facts:
+- 'Closed-ticket volume: phone 8, chat 7, email 6'
+acceptable_actions:
+- answer
+prohibited_claims:
+- naming a 'most effective' channel without a stated definition
+assertions:
+- id: channel_rank
+  sql: SELECT channel FROM support_tickets WHERE status='closed' GROUP BY channel
+    ORDER BY COUNT(*) DESC
+  expected_rows:
+  - - phone
+  - - chat
+  - - email

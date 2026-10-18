@@ -1,6 +1,7 @@
 id: dev-08
 question: Why did phone support volume collapse in October?
 flaw_type: false_premise
+pair_id: dev-08c
 reference_facts:
 - 'Phone tickets by month: Aug 3, Sep 2, Oct 3 -- October was the strongest month,
   not a collapse'

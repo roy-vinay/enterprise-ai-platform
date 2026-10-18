@@ -13,6 +13,13 @@ assertions:
 - id: open_count
   sql: SELECT COUNT(*) FROM support_tickets WHERE status='open'
   expected: 3
-- id: open_customer
-  sql: SELECT DISTINCT customer_id FROM support_tickets WHERE status='open'
-  expected: C007
+- id: open_customer_count
+  sql: SELECT COUNT(DISTINCT customer_id) FROM support_tickets WHERE status='open'
+  expected: 1
+- id: open_customer_owners
+  sql: SELECT DISTINCT customer_id FROM support_tickets WHERE status='open' ORDER BY customer_id
+  expected_rows:
+  - [C007]
+- id: open_customer_all_c007
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='open' AND customer_id != 'C007'
+  expected: 0

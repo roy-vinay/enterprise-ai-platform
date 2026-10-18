@@ -1,0 +1,24 @@
+id: dev-09c
+question: Who handled our P1 tickets, and what was each handler's average resolution
+  time?
+flaw_type: valid
+pair_id: dev-09
+reference_facts:
+- All 4 P1 tickets were handled by A1 (Maya Chen)
+acceptable_actions:
+- answer
+prohibited_claims:
+- naming any other agent as a P1 handler
+assertions:
+- id: p1_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1'
+  expected: 4
+- id: p1_handlers
+  sql: SELECT DISTINCT agent_id FROM support_tickets WHERE priority='P1' ORDER BY
+    agent_id
+  expected_rows:
+  - - A1
+- id: a1_p1_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE priority='P1' AND
+    agent_id='A1' AND status='closed'
+  expected: 138.75

@@ -1,6 +1,7 @@
 id: dev-24
 question: What are the top complaint categories this quarter?
 flaw_type: unavailable_evidence
+pair_id: dev-24c
 reference_facts:
 - No category/tag column exists on tickets
 - ticket_messages exist for only 3 of 24 tickets -- far too thin to categorize the

@@ -1,0 +1,15 @@
+id: dev-26c
+question: How many tickets were closed in September 2026?
+flaw_type: valid
+pair_id: dev-26
+reference_facts:
+- 6 tickets were closed in September 2026
+acceptable_actions:
+- answer
+prohibited_claims:
+- treating currently-open tickets as reopened ones
+assertions:
+- id: sep_closed
+  sql: SELECT COUNT(*) FROM support_tickets WHERE status='closed' AND opened_at >=
+    '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 6

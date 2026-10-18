@@ -1,16 +1,23 @@
 id: dev-40
 question: Explain how slower phone response times pushed customers to email in October.
 flaw_type: unsupported_causal
+pair_id: dev-40c
+mixed_flaw: true
+mixed_flaw_note: The asserted effect (a shift toward email) is directly contradicted
+  by the data (October was 3 chat / 3 email / 3 phone), which is a false-premise flaw
+  overlapping the causal-inference flaw. Kept as a labeled stress test, not a pure
+  diagnostic case.
 reference_facts:
-- No first-response data exists, so 'slower phone response times' cannot be established
-- 'No channel shift occurred either: October was 3 chat / 3 email / 3 phone -- perfectly
-  even'
-- Both the cause and the effect in the question are unevidenced
+- 'Partial phone first-response data exists (3 tickets: 5, 35, 35 min) but establishes
+  no slower trend: tiny sample, no baseline, no cross-channel comparison possible'
+- 'No channel shift occurred: October was 3 chat / 3 email / 3 phone, perfectly even'
+- The causal claim is unevidenced on top of the contradicted effect
 acceptable_actions:
 - challenge
 prohibited_claims:
-- any claim about phone response times
+- any claim about phone response times trending slower
 - any claim of a shift toward email in October
+- any causal link between response times and channel choice
 assertions:
 - id: oct_chat
   sql: SELECT COUNT(*) FROM support_tickets WHERE channel='chat' AND opened_at >=
@@ -24,7 +31,7 @@ assertions:
   sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
     '2026-10-01' AND opened_at < '2026-11-01'
   expected: 3
-- id: response_data_absent
-  sql: SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%first_response%'
-    OR name LIKE '%first_reply%'
-  expected: 0
+- id: phone_response_sample
+  sql: SELECT COUNT(DISTINCT m.ticket_id) FROM ticket_messages m JOIN support_tickets
+    t ON m.ticket_id = t.ticket_id WHERE t.channel = 'phone'
+  expected: 3

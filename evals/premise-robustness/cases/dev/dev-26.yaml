@@ -1,6 +1,7 @@
 id: dev-26
 question: What is our ticket reopen rate?
 flaw_type: unavailable_evidence
+pair_id: dev-26c
 reference_facts:
 - No reopen tracking exists -- status is a point-in-time value with no history
 - Reopen rate cannot be derived from current status alone

@@ -1,12 +1,14 @@
 id: dev-15
 question: Show me ticket trends.
 flaw_type: ambiguity
+pair_id: dev-15c
 reference_facts:
 - 'Trends of what: volume (8/7/9 by month), resolution time, channel mix, priority
   mix?'
 - Over what period? No measure or window is specified
 acceptable_actions:
 - clarify
+- answer
 prohibited_claims:
 - picking one trend unilaterally without confirming what the user wants
 assertions:

@@ -1,6 +1,7 @@
 id: dev-30
 question: Who are our power users?
 flaw_type: undefined_metric
+pair_id: dev-30c
 reference_facts:
 - '''Power user'' is undefined: most tickets (C001, 4)? longest-tenured customer (C005,
   since 2023-11-05)? most messages?'

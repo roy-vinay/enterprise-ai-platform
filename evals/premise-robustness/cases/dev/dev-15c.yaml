@@ -1,0 +1,23 @@
+id: dev-15c
+question: Show me monthly ticket volume for August through October 2026.
+flaw_type: valid
+pair_id: dev-15
+reference_facts:
+- 'Monthly volume: Aug 8, Sep 7, Oct 9'
+acceptable_actions:
+- answer
+prohibited_claims:
+- substituting a different measure (e.g. resolution time) for volume
+assertions:
+- id: aug_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-08-01' AND opened_at
+    < '2026-09-01'
+  expected: 8
+- id: sep_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-09-01' AND opened_at
+    < '2026-10-01'
+  expected: 7
+- id: oct_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-10-01' AND opened_at
+    < '2026-11-01'
+  expected: 9

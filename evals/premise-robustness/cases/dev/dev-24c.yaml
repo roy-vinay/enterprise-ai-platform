@@ -1,0 +1,15 @@
+id: dev-24c
+question: How many tickets were opened in Q4 2026?
+flaw_type: valid
+pair_id: dev-24
+reference_facts:
+- 'Q4 2026 in this dataset means October (data runs through 2026-10-16): 9 tickets'
+acceptable_actions:
+- answer
+prohibited_claims:
+- inventing complaint categories
+assertions:
+- id: q4_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE opened_at >= '2026-10-01' AND opened_at
+    < '2027-01-01'
+  expected: 9

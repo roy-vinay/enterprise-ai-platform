@@ -2,6 +2,7 @@ id: dev-09
 question: Maya Chen handled all our P1 tickets, so why is her average resolution time
   the worst on the team?
 flaw_type: false_premise
+pair_id: dev-09c
 reference_facts:
 - All 4 P1 tickets were handled by A1 (Maya Chen) -- that part is true
 - 'But A1''s avg resolution (135.57 min) is the BEST on the team, not the worst (A2:

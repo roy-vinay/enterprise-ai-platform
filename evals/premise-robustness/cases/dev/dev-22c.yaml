@@ -1,0 +1,18 @@
+id: dev-22c
+question: Which customer opened the most tickets?
+flaw_type: valid
+pair_id: dev-22
+reference_facts:
+- C001 (Acme Corp) opened 4 tickets, the most of any customer
+acceptable_actions:
+- answer
+prohibited_claims:
+- ranking by product area (no such data exists)
+assertions:
+- id: top_customer
+  sql: SELECT customer_id FROM support_tickets GROUP BY customer_id ORDER BY COUNT(*)
+    DESC LIMIT 1
+  expected: C001
+- id: top_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE customer_id='C001'
+  expected: 4

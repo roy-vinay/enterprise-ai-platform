@@ -1,6 +1,7 @@
 id: dev-34
 question: Which region needs the most attention?
 flaw_type: undefined_metric
+pair_id: dev-34c
 reference_facts:
 - '''Attention'' is undefined and the readings diverge:'
 - by total tickets EMEA leads (9); by open tickets APAC holds all 3 (all from C007)

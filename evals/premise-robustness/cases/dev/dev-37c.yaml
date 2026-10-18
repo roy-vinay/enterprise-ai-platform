@@ -1,0 +1,15 @@
+id: dev-37c
+question: What is the average resolution time for closed email tickets?
+flaw_type: valid
+pair_id: dev-37
+reference_facts:
+- 'Email closed-ticket average: 1734.67 min'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim about an email-first policy
+assertions:
+- id: email_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets WHERE channel='email' AND
+    status='closed'
+  expected: 1734.6666666666667

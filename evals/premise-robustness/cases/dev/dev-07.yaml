@@ -1,6 +1,7 @@
 id: dev-07
 question: Why are Enterprise customers' resolution times getting worse each month?
 flaw_type: false_premise
+pair_id: dev-07c
 reference_facts:
 - 'Enterprise avg resolution IMPROVED each month: Aug 233.67 -> Sep 135.0 -> Oct 68.33
   min'

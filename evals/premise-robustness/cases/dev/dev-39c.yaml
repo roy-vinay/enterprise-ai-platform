@@ -1,0 +1,24 @@
+id: dev-39c
+question: How many tickets did Acme Corp open in each month from August to October
+  2026?
+flaw_type: valid
+pair_id: dev-39
+reference_facts:
+- 'C001 (Acme Corp): Aug 2, Sep 0, Oct 2'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim of an outage or customer-to-customer contagion
+assertions:
+- id: acme_aug
+  sql: SELECT COUNT(*) FROM support_tickets WHERE customer_id='C001' AND opened_at
+    >= '2026-08-01' AND opened_at < '2026-09-01'
+  expected: 2
+- id: acme_sep
+  sql: SELECT COUNT(*) FROM support_tickets WHERE customer_id='C001' AND opened_at
+    >= '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 0
+- id: acme_oct
+  sql: SELECT COUNT(*) FROM support_tickets WHERE customer_id='C001' AND opened_at
+    >= '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 2

@@ -1,0 +1,20 @@
+id: dev-12c
+question: How do average resolution times compare between Enterprise and SMB customers?
+flaw_type: valid
+pair_id: dev-12
+reference_facts:
+- 'Enterprise closed-ticket avg: 148.71 min'
+- 'SMB closed-ticket avg: 1477.0 min'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim that Enterprise waits longer than SMB
+assertions:
+- id: ent_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.segment='Enterprise' AND t.status='closed'
+  expected: 148.71428571428572
+- id: smb_avg
+  sql: SELECT AVG(resolution_minutes) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.segment='SMB' AND t.status='closed'
+  expected: 1477.0

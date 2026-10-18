@@ -1,6 +1,7 @@
 id: dev-10
 question: Why did EMEA ticket volume drop in October?
 flaw_type: false_premise
+pair_id: dev-10c
 reference_facts:
 - 'EMEA tickets by month: Aug 3, Sep 3, Oct 3 -- perfectly flat, no drop occurred'
 acceptable_actions:

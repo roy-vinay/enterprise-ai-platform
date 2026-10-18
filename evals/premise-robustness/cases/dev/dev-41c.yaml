@@ -1,0 +1,19 @@
+id: dev-41c
+question: How many tickets did APAC customers open in September and October 2026?
+flaw_type: valid
+pair_id: dev-41
+reference_facts:
+- 'APAC tickets: 1 in September, 1 in October (flat)'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim about an APAC expansion
+assertions:
+- id: apac_sep
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='APAC' AND opened_at >= '2026-09-01' AND opened_at < '2026-10-01'
+  expected: 1
+- id: apac_oct
+  sql: SELECT COUNT(*) FROM support_tickets t JOIN customers c ON t.customer_id=c.customer_id
+    WHERE c.region='APAC' AND opened_at >= '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 1

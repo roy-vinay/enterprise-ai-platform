@@ -1,0 +1,23 @@
+id: dev-40c
+question: How many tickets came through each channel in October 2026?
+flaw_type: valid
+pair_id: dev-40
+reference_facts:
+- 'October was perfectly even: 3 chat, 3 email, 3 phone'
+acceptable_actions:
+- answer
+prohibited_claims:
+- any claim of a channel shift or its causes
+assertions:
+- id: oct_chat
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='chat' AND opened_at >=
+    '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 3
+- id: oct_email
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='email' AND opened_at >=
+    '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 3
+- id: oct_phone
+  sql: SELECT COUNT(*) FROM support_tickets WHERE channel='phone' AND opened_at >=
+    '2026-10-01' AND opened_at < '2026-11-01'
+  expected: 3

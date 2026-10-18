@@ -1,6 +1,7 @@
 id: dev-22
 question: Which product area generates the most support tickets?
 flaw_type: unavailable_evidence
+pair_id: dev-22c
 reference_facts:
 - No product-area column exists on any table -- tickets cannot be attributed to product
   areas

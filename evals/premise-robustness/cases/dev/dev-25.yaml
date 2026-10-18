@@ -1,6 +1,7 @@
 id: dev-25
 question: How many tickets were escalated to engineering?
 flaw_type: unavailable_evidence
+pair_id: dev-25c
 reference_facts:
 - No escalation flag or escalation-history data exists in the schema
 acceptable_actions:

@@ -1,11 +1,13 @@
 id: dev-20
 question: Break down tickets by customer size.
 flaw_type: ambiguity
+pair_id: dev-20c
 reference_facts:
 - '''Size'' is ambiguous: segment (Enterprise 7, Mid-Market 8, SMB 9)? ticket count
   per customer? employee count (no such data)?'
 acceptable_actions:
 - clarify
+- answer
 prohibited_claims:
 - choosing one meaning of 'size' without confirming
 assertions:

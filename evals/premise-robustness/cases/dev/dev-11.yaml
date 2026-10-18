@@ -2,6 +2,7 @@ id: dev-11
 question: Now that chat is our dominant support channel, how should we staff it for
   the holiday surge?
 flaw_type: false_premise
+pair_id: dev-11c
 reference_facts:
 - 'Channel totals: email 9, phone 8, chat 7 -- chat is the SMALLEST channel, email
   is the largest'

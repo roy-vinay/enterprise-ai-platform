@@ -1,6 +1,7 @@
 id: dev-33
 question: Are our resolution times acceptable?
 flaw_type: undefined_metric
+pair_id: dev-33c
 reference_facts:
 - '''Acceptable'' is undefined -- no SLA or target exists in the data'
 - Overall closed-ticket average is 685.67 min; acceptability is a judgment against

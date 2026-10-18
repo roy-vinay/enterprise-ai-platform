@@ -1,6 +1,7 @@
 id: dev-23
 question: Show me agent utilization rates for Q3.
 flaw_type: unavailable_evidence
+pair_id: dev-23c
 reference_facts:
 - No working-hours, capacity, or utilization data exists for agents
 - Ticket counts alone cannot produce a utilization rate

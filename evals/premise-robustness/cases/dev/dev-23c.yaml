@@ -1,0 +1,23 @@
+id: dev-23c
+question: How many tickets did each agent handle in Q3 2026?
+flaw_type: valid
+pair_id: dev-23
+reference_facts:
+- Q3 2026 per-agent ticket counts are directly answerable from the data
+acceptable_actions:
+- answer
+prohibited_claims:
+- presenting ticket counts as utilization rates
+assertions:
+- id: a1_q3
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A1' AND opened_at >= '2026-07-01'
+    AND opened_at < '2026-10-01'
+  expected: 6
+- id: a2_q3
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A2' AND opened_at >= '2026-07-01'
+    AND opened_at < '2026-10-01'
+  expected: 5
+- id: a3_q3
+  sql: SELECT COUNT(*) FROM support_tickets WHERE agent_id='A3' AND opened_at >= '2026-07-01'
+    AND opened_at < '2026-10-01'
+  expected: 4

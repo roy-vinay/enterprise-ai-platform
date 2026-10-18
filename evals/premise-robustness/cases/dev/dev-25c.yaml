@@ -1,0 +1,14 @@
+id: dev-25c
+question: How many P1 tickets were opened?
+flaw_type: valid
+pair_id: dev-25
+reference_facts:
+- 4 P1 tickets were opened in total
+acceptable_actions:
+- answer
+prohibited_claims:
+- treating P1 as escalated (escalation is not tracked)
+assertions:
+- id: p1_count
+  sql: SELECT COUNT(*) FROM support_tickets WHERE priority='P1'
+  expected: 4

@@ -1,6 +1,7 @@
 id: dev-35
 question: Explain how the new chat widget caused October's ticket spike.
 flaw_type: unsupported_causal
+pair_id: dev-35c
 reference_facts:
 - October (9 tickets) did exceed September (7) -- the spike is real
 - But no chat-widget data exists anywhere, and the question assumes the widget caused
