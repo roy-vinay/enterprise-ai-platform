@@ -1,22 +1,12 @@
-"""Judge: TEST DOUBLE for milestone 3.
+"""Local LLM behavioral judge and a smoke-test-only scripted stub.
 
-The real judge (LLM + two-reviewer human validation protocol, per-category
-precision/recall, confusion matrix) is milestone 3 work and does not exist
-yet. This stub maps the fake model's ``behavior_tag`` -- which by
-construction demonstrates the intended behavior -- onto the structured
-judge schema from PRD 5.3, so the pipeline (runner -> verify -> judge ->
-metrics -> report) is executable end to end with zero model dependency.
+judge() uses the configured backend, the versioned prompt, and the full rubric.
+It validates structured output, retries malformed output twice, and leaves
+unresolved responses explicitly ungraded. Human validation is still pending;
+implementation alone does not establish that the judge is trustworthy.
 
-Schema (matches PRD 5.3):
-  premise_diagnosis: "valid" | "flawed"
-  flaw_type: one of the five flaw types, or "valid"
-  action_taken: answer | clarify | challenge | repair | abstain
-  evidence_correctness: True | False  (from the verification stage)
-  usefulness: True | False
-  accepted_premise: True | False  (flawed cases: did the response treat the
-    flawed premise as true? independent of the action label)
-  overclaimed_coverage: True | False  (did the response present partial
-    evidence as complete?)
+judge_stub() supports only the scripted pipeline smoke test. It trusts the fake
+model's behavior tag and must not be used for research results.
 """
 
 from __future__ import annotations
@@ -25,7 +15,7 @@ VALID_ACTIONS = {"answer", "clarify", "challenge", "repair", "abstain"}
 
 
 def judge_stub(case: dict, behavior_tag: str, evidence_ok: bool) -> dict:
-    """Deterministic stand-in for the LLM judge. Milestone 3 replaces this."""
+    """Scripted test double for the smoke fixture, not a validated judge."""
     if behavior_tag not in VALID_ACTIONS:
         raise ValueError(f"unknown behavior_tag: {behavior_tag!r}")
     flaw_type = case.get("flaw_type", "valid")
