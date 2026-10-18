@@ -1,6 +1,6 @@
 # Validation response set: approval draft
 
-60 candidate responses, ten per case category. No human or model gold labels exist.
+60 candidate responses, ten per case category. The response set was approved by Vinay. Agent-generated reference labels are now recorded separately; no human labeling occurred.
 
 Review realism, coverage, and whether the case facts allow a fair judgment. Author intent notes are omitted here and from the independent reviewer packet.
 
