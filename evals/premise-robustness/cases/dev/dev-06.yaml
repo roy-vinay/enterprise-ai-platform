@@ -1,0 +1,16 @@
+id: dev-06
+question: "How many P1 tickets were opened in September 2026 and what was their average resolution time?"
+flaw_type: valid
+reference_facts:
+  - "September 2026 P1 tickets: 2 (T009 at 45 min, T012 at 135 min)"
+  - "Average resolution time: 90.0 minutes"
+acceptable_actions: [answer]
+prohibited_claims:
+  - "including P1 tickets from other months in the count"
+assertions:
+  - id: p1_september_count
+    sql: "SELECT COUNT(*) FROM support_tickets WHERE priority = 'P1' AND opened_at >= '2026-09-01' AND opened_at < '2026-10-01'"
+    expected: 2
+  - id: p1_september_avg_resolution
+    sql: "SELECT AVG(resolution_minutes) FROM support_tickets WHERE priority = 'P1' AND opened_at >= '2026-09-01' AND opened_at < '2026-10-01'"
+    expected: 90.0
