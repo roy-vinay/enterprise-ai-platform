@@ -49,7 +49,7 @@ def build_db(db_path: Path | str = DEFAULT_DB_PATH) -> Path:
 
 def verification_connection(db_path: Path | str = DEFAULT_DB_PATH) -> sqlite3.Connection:
     """Unbudgeted connection for the harness's verification stage."""
-    return sqlite3.connect(db_path)
+    return sqlite3.connect(Path(db_path).resolve().as_uri() + "?mode=ro", uri=True)
 
 
 class QueryBudget:
@@ -69,7 +69,7 @@ class ModelConnection:
     """What the model under test gets: read-only SQL + fixed tool budget."""
 
     def __init__(self, db_path: Path | str = DEFAULT_DB_PATH, budget: int = 10):
-        self._con = sqlite3.connect(db_path)
+        self._con = sqlite3.connect(Path(db_path).resolve().as_uri() + "?mode=ro", uri=True)
         self._con.row_factory = sqlite3.Row
         self.budget = QueryBudget(budget)
 
@@ -85,7 +85,12 @@ class ModelConnection:
     def query(self, sql: str):
         self._check_read_only(sql)
         self.budget.spend()
-        return self._con.execute(sql).fetchall()
+        try:
+            return self._con.execute(sql).fetchall()
+        except sqlite3.OperationalError as exc:
+            if "readonly" in str(exc).lower():
+                raise ReadOnlyViolation("model connection cannot modify the database") from exc
+            raise
 
     def close(self) -> None:
         self._con.close()
