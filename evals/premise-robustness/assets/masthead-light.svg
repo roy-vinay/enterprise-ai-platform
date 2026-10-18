@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="300" viewBox="0 0 1000 300" role="img" aria-label="Premise Robustness. Correct SQL starts with a sound question. An evaluation lab for BI assistants. Scripted prototype, no research results yet.">
+<rect x="1" y="1" width="998" height="298" rx="18" fill="#FAF9F6" stroke="#DADFE4"/>
+<text x="42" y="48" font-family="Helvetica,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="2" fill="#C15C2A">ENTERPRISE AI / EVALUATION LAB</text>
+<text x="42" y="108" font-family="Georgia,serif" font-size="46" font-weight="700" fill="#20252B">Premise Robustness</text>
+<text x="42" y="151" font-family="Helvetica,Arial,sans-serif" font-size="23" fill="#596572">Correct SQL starts with a sound question.</text>
+<path d="M42 181 H958" stroke="#DADFE4"/>
+<text x="42" y="217" font-family="Helvetica,Arial,sans-serif" font-size="17" fill="#20252B">Check the premise. Ground the correction. Preserve usefulness.</text>
+<text x="42" y="259" font-family="Helvetica,Arial,sans-serif" font-size="14" fill="#596572">SCRIPTED PROTOTYPE   /   6 DEV CASES   /   SYNTHETIC DATA   /   NO API KEYS</text>
+</svg>
