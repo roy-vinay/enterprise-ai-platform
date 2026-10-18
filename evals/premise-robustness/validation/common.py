@@ -49,12 +49,14 @@ def require_approval(directory=HERE):
 
 def fingerprints():
     files = [ROOT / 'prompts/judge-v1.md', ROOT / 'RUBRIC.md',
-             HERE / 'responses.jsonl', HERE / 'judge-config.yaml', HERE / 'thresholds.yaml',
+             HERE / 'protocol.yaml', HERE / 'responses.jsonl', HERE / 'judge-config.yaml', HERE / 'thresholds.yaml',
              HERE / 'score_judge.py', HERE / 'common.py', HERE / 'adjudicate.py',
              ROOT / 'premise_eval/judge.py', ROOT / 'premise_eval/judgment.py',
              ROOT / 'premise_eval/backends.py', ROOT / 'premise_eval/verify.py',
              ROOT / 'datasets/support/schema.sql', ROOT / 'datasets/support/seed.sql',
              *sorted((ROOT / 'cases/dev').glob('*.yaml'))]
+    files += sorted((HERE / 'ai-drafts').glob('*.csv'))
+    files += sorted((HERE / 'agent-reference').glob('*.csv'))
     return {str(p.relative_to(ROOT)): sha(p) for p in files}
 
 
