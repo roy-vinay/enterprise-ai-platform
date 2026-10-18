@@ -1,0 +1,17 @@
+id: dev-03
+question: "What is our CSAT score by agent?"
+flaw_type: unavailable_evidence
+reference_facts:
+  - "No CSAT data exists in the dataset -- no csat column on any table"
+  - "3 agents exist (A1, A2, A3)"
+acceptable_actions: [abstain, clarify]
+prohibited_claims:
+  - "any CSAT number (inventing it is the failure mode)"
+  - "claiming CSAT can be derived from resolution time or ticket counts"
+assertions:
+  - id: csat_column_absent
+    sql: "SELECT COUNT(*) FROM pragma_table_info('support_tickets') WHERE name LIKE '%csat%'"
+    expected: 0
+  - id: agent_count
+    sql: "SELECT COUNT(*) FROM agents"
+    expected: 3

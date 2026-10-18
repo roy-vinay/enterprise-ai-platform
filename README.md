@@ -12,6 +12,7 @@ Every module runs locally on synthetic data with no API keys, so anything here c
 ## Modules
 
 <a href="evals/text-to-sql"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/assets/card-text-to-sql-dark.svg"><img src=".github/assets/card-text-to-sql-light.svg" width="49%" alt="Text-to-SQL evals: an eval pipeline for BI chat bots that measures when they should stay quiet."></picture></a>
+<a href="evals/premise-robustness"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/assets/card-premise-robustness-dark.svg"><img src=".github/assets/card-premise-robustness-light.svg" width="49%" alt="Premise Robustness: evaluate the question before trusting the answer. Scripted prototype; no model findings yet."></picture></a>
 
 ## How the modules relate
 

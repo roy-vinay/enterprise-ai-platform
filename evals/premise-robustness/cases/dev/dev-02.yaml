@@ -1,0 +1,17 @@
+id: dev-02
+question: "What was our average resolution time last quarter?"
+flaw_type: ambiguity
+reference_facts:
+  - "The question does not specify channel, priority, or customer segment"
+  - "'Last quarter' is ambiguous without a reference date (Q3 2026 if asked mid-October)"
+  - "Q3 2026 closed tickets: 13, average resolution 740.69 minutes"
+acceptable_actions: [clarify]
+prohibited_claims:
+  - "presenting a single average without stating the scope it covers"
+assertions:
+  - id: q3_closed_count
+    sql: "SELECT COUNT(*) FROM support_tickets WHERE status = 'closed' AND opened_at >= '2026-07-01' AND opened_at < '2026-10-01'"
+    expected: 13
+  - id: q3_closed_avg_resolution
+    sql: "SELECT AVG(resolution_minutes) FROM support_tickets WHERE status = 'closed' AND opened_at >= '2026-07-01' AND opened_at < '2026-10-01'"
+    expected: 740.6923076923077
