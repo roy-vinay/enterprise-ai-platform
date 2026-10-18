@@ -50,3 +50,45 @@ def judge_stub(case: dict, behavior_tag: str, evidence_ok: bool) -> dict:
         "overclaimed_coverage": False,
         "judge": "stub-v1 (milestone 3 replaces with LLM judge)",
     }
+
+
+JUDGE_VERSION = "judge-v1"
+
+
+def judge(response_text, case, evidence_report, *, backend=None):
+    """Grade behavior with up to two retries; malformed output stays ungraded."""
+    import json
+    from pathlib import Path
+    from .backends import load_backend
+    from .judgment import SCHEMA, parse
+
+    if type(evidence_report.get("passed")) is not bool:
+        raise ValueError("Verifier report must contain a strict passed boolean")
+    if evidence_report.get("stale_ground_truth"):
+        raise ValueError("Stale ground truth must be repaired before judging")
+    root = Path(__file__).resolve().parent.parent
+    prompt = (root / "prompts/judge-v1.md").read_text()
+    rubric = (root / "RUBRIC.md").read_text()
+    backend = backend or load_backend()
+    identity = backend.identity()
+    # Never expose author notes, candidate behavior tags, or human gold labels.
+    context = {k: case[k] for k in ("id", "question", "flaw_type", "reference_facts",
+        "acceptable_actions", "prohibited_claims", "mixed_flaw", "mixed_flaw_note") if k in case}
+    messages = [dict(role="system", content=prompt + "\n\nVerbatim grading standard:\n" + rubric),
+                dict(role="user", content=json.dumps(dict(case=context,
+                    response_text=response_text, evidence_report=evidence_report)))]
+    errors = []
+    for attempt in range(3):
+        try:
+            raw = backend.complete(messages, SCHEMA)
+            result = parse(raw)
+            if evidence_report["passed"] is False and result["evidence_correctness"]:
+                raise ValueError("Judge contradicted failed deterministic verification")
+            return dict(graded=True, judgment=result, attempts=attempt + 1,
+                        judge_version=JUDGE_VERSION, model=identity)
+        except (ValueError, TypeError, KeyError) as exc:
+            errors.append(str(exc))
+            messages.append(dict(role="user", content="Output failed schema/verification checks: "
+                + str(exc) + ". Return only a complete corrected JSON object."))
+    return dict(graded=False, reason="; ".join(errors), attempts=3,
+                judge_version=JUDGE_VERSION, model=identity)
