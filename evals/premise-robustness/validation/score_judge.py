@@ -1,4 +1,4 @@
-"""Score the local judge against adjudicated human gold, never self-label."""
+"""Score a local judge against explicitly typed adjudicated reference labels."""
 from __future__ import annotations
 
 import argparse
@@ -80,9 +80,12 @@ def evaluate(gold, predictions, thresholds):
 def inputs(directory=HERE):
     directory = Path(directory)
     if not (directory / 'gold.jsonl').exists():
-        raise ValueError('validation/gold.jsonl is absent; two independent reviews and adjudication are required')
+        raise ValueError('validation/gold.jsonl is absent; approved reference labels and adjudication are required')
     rows = require_approval(directory)
     provenance = json.loads((directory / 'gold-provenance.json').read_text())
+    protocol = yaml.safe_load((directory / 'protocol.yaml').read_text())
+    if provenance.get('reference_protocol') != protocol['mode']:
+        raise ValueError('Reference protocol changed; re-adjudicate before scoring')
     if (provenance.get('rubric_sha256') != sha(ROOT / 'RUBRIC.md') or
             provenance.get('gold_sha256') != sha(directory / 'gold.jsonl') or
             provenance.get('responses_sha256') != sha(directory / 'responses.jsonl') or
@@ -104,7 +107,7 @@ def score(*, config=None, report_path=REPORT, backend=None):
         path = db.build_db(Path(tmp) / 'validation.db')
         con = db.verification_connection(path)
         try:
-            for response in rows:
+            for index, response in enumerate(rows, 1):
                 case_path = ROOT / 'cases/dev' / (response['case_id'] + '.yaml')
                 case = yaml.safe_load(case_path.read_text())
                 facts = verify.verify_ground_truth(case, con)
@@ -114,13 +117,17 @@ def score(*, config=None, report_path=REPORT, backend=None):
                 evidence = verify.verify_response_claims(case, claims, con)
                 evidence['declared_claims'] = claims
                 predictions[response['response_id']] = judge.judge(response['response_text'], case, evidence, backend=backend)
+                print(f"Judged {index}/{len(rows)}: {response['response_id']}", flush=True)
         finally:
             con.close()
     if fingerprints() != hashes or backend.identity() != identity:
         raise ValueError('Inputs or model changed during validation; discard run')
     thresholds = yaml.safe_load((HERE / 'thresholds.yaml').read_text())
     result = evaluate(gold, predictions, thresholds)
-    report = dict(status='passed' if result['passed'] else 'failed', judge_version=judge.JUDGE_VERSION,
+    protocol = yaml.safe_load((HERE / 'protocol.yaml').read_text())
+    report = dict(reference_protocol=protocol, human_validated=protocol['mode'] == 'human',
+        interpretation=protocol.get('meaning', 'Agreement with adjudicated references'),
+        status='passed' if result['passed'] else 'failed', judge_version=judge.JUDGE_VERSION,
         versions=dict(dataset=versions.DATASET_VERSION, case_set=versions.CASE_SET_VERSION,
                       judge_prompt='judge-v1', response_set='validation-v1'),
         model=identity, input_sha256=hashes, gold_sha256=sha(HERE / 'gold.jsonl'),
@@ -128,7 +135,9 @@ def score(*, config=None, report_path=REPORT, backend=None):
         gold_provenance_sha256=sha(HERE / 'gold-provenance.json'),
         thresholds=thresholds, results=result, predictions=predictions)
     write_json(report_path, report)
-    lines = ['# Judge validation v1', '', 'Status: ' + report['status'],
+    lines = ['# Judge agreement evaluation v1', '', report['interpretation'], '',
+        'Human-validated: ' + str(report['human_validated']).lower(), '',
+        'Status: ' + report['status'],
         f"Responses: {result['n_total']}; ungraded: {result['n_ungraded']}",
         f"Macro F1: {result['macro_f1']:.3f}", '',
         '## Failure analysis', '', *(result['failures'] or ['All configured bars cleared.'])]
