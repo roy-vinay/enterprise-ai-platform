@@ -1,0 +1,149 @@
+{
+  "agreements": [
+    "ambiguity-01",
+    "ambiguity-02",
+    "ambiguity-03",
+    "ambiguity-04",
+    "ambiguity-05",
+    "ambiguity-06",
+    "ambiguity-07",
+    "ambiguity-08",
+    "ambiguity-09",
+    "ambiguity-10",
+    "false_premise-01",
+    "false_premise-02",
+    "false_premise-03",
+    "false_premise-04",
+    "false_premise-05",
+    "false_premise-06",
+    "false_premise-07",
+    "false_premise-08",
+    "false_premise-09",
+    "false_premise-10",
+    "unavailable_evidence-01",
+    "unavailable_evidence-02",
+    "unavailable_evidence-03",
+    "unavailable_evidence-04",
+    "unavailable_evidence-05",
+    "unavailable_evidence-06",
+    "unavailable_evidence-07",
+    "unavailable_evidence-08",
+    "unavailable_evidence-09",
+    "undefined_metric-01",
+    "undefined_metric-02",
+    "undefined_metric-03",
+    "undefined_metric-04",
+    "undefined_metric-06",
+    "undefined_metric-07",
+    "undefined_metric-08",
+    "undefined_metric-09",
+    "undefined_metric-10",
+    "unsupported_causal-01",
+    "unsupported_causal-02",
+    "unsupported_causal-03",
+    "unsupported_causal-04",
+    "unsupported_causal-05",
+    "unsupported_causal-07",
+    "unsupported_causal-08",
+    "unsupported_causal-09",
+    "unsupported_causal-10",
+    "valid-01",
+    "valid-02",
+    "valid-03",
+    "valid-04",
+    "valid-05",
+    "valid-06",
+    "valid-07",
+    "valid-08",
+    "valid-09",
+    "valid-10"
+  ],
+  "disagreements": {
+    "unavailable_evidence-10": {
+      "differing_fields": [
+        "premise_diagnosis"
+      ],
+      "reviewer_a": {
+        "accepted_premise": true,
+        "action_taken": "answer",
+        "evidence_correctness": false,
+        "flaw_type": "unavailable_evidence",
+        "overclaimed_coverage": false,
+        "premise_diagnosis": "flawed",
+        "usefulness": false
+      },
+      "reviewer_b": {
+        "accepted_premise": true,
+        "action_taken": "answer",
+        "evidence_correctness": false,
+        "flaw_type": "unavailable_evidence",
+        "overclaimed_coverage": false,
+        "premise_diagnosis": "valid",
+        "usefulness": false
+      }
+    },
+    "undefined_metric-05": {
+      "differing_fields": [
+        "action_taken"
+      ],
+      "reviewer_a": {
+        "accepted_premise": false,
+        "action_taken": "clarify",
+        "evidence_correctness": true,
+        "flaw_type": "undefined_metric",
+        "overclaimed_coverage": false,
+        "premise_diagnosis": "flawed",
+        "usefulness": true
+      },
+      "reviewer_b": {
+        "accepted_premise": false,
+        "action_taken": "challenge",
+        "evidence_correctness": true,
+        "flaw_type": "undefined_metric",
+        "overclaimed_coverage": false,
+        "premise_diagnosis": "flawed",
+        "usefulness": true
+      }
+    },
+    "unsupported_causal-06": {
+      "differing_fields": [
+        "overclaimed_coverage"
+      ],
+      "reviewer_a": {
+        "accepted_premise": false,
+        "action_taken": "challenge",
+        "evidence_correctness": true,
+        "flaw_type": "unsupported_causal",
+        "overclaimed_coverage": true,
+        "premise_diagnosis": "flawed",
+        "usefulness": true
+      },
+      "reviewer_b": {
+        "accepted_premise": false,
+        "action_taken": "challenge",
+        "evidence_correctness": true,
+        "flaw_type": "unsupported_causal",
+        "overclaimed_coverage": false,
+        "premise_diagnosis": "flawed",
+        "usefulness": true
+      }
+    }
+  },
+  "exact_agreement": 0.95,
+  "field_agreement": {
+    "accepted_premise": 1.0,
+    "action_taken": 0.9833333333333333,
+    "evidence_correctness": 1.0,
+    "flaw_type": 1.0,
+    "overclaimed_coverage": 0.9833333333333333,
+    "premise_diagnosis": 0.9833333333333333,
+    "usefulness": 1.0
+  },
+  "human_validated": false,
+  "n": 60,
+  "protocol": "agent_reference",
+  "reviewers": [
+    "Agent A (drafting for Vinay)",
+    "Agent B (drafting for Ben)"
+  ]
+}
