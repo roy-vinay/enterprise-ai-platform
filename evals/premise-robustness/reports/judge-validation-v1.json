@@ -1,0 +1,13 @@
+{
+  "status": "pending_response_set_approval",
+  "judge_version": "judge-v1",
+  "results": null,
+  "predictions": null,
+  "acceptance_bar_cleared": false,
+  "blockers": [
+    "Vinay must approve the exact 60-response draft before labeling.",
+    "A second independent reviewer has not been selected.",
+    "No human labels, adjudicated gold, or live Ollama scores exist."
+  ],
+  "note": "Status artifact only, not a completed judge validation report."
+}
