@@ -276,3 +276,37 @@ The frontier arm has no scores because API credentials are unavailable and
 paid calls are not enabled. No API generation was performed. See the
 [comparison status](reports/stronger-judge-v1-comparison.md) and
 [experiment analysis](reports/stronger-judge-v1-status.md). The PR remains draft.
+
+## Local decomposition experiment
+
+The active follow-up is `decomposed-judge-v1`, local only: no paid model calls,
+keys, API adapters or larger models. It compares the revised single-call baseline
+with five focused sub-calls and then three-sample voting at temperature 0.7
+with distinct seeds. Evidence correctness and usefulness are explicit sub-calls;
+no field is hidden by the decomposition. References, rubric and thresholds stay
+unchanged. The earlier stronger-judge experiment remains frozen and untouched.
+
+See [experiment design and resume instructions](validation/experiments/decomposed-judge-v1/README.md).
+Reports include runtime, actual model-call counts, strict fail-closed outcomes,
+per-field prompt provenance and vote disagreement rates. The model's factual
+inputs differ by focused task as specified, and the baseline alone retains a
+supplied case flaw category; reports disclose that limitation. A dry-run pass
+only triggers Vinay and Ben's independent human validation. No merge until the
+bar clears against human gold.
+
+### Decomposition experiment measured outcome: all arms failed
+
+On the same frozen 68 responses, action F1 is 0.769 for single-call, 0.454 for
+decomposition, and 0.442 for decomposition with voting. Misleading recall rises
+from 63.16% to 68.42% with decomposition and stays there with voting. Repair
+recall rises from 3/8 to 7/8, but repair precision remains below the category bar.
+All judgments were graded. Actual local request counts were 68 / 340 / 1020;
+active runtimes were 416.27 / 890.89 / 1569.75 seconds, with USD 0 API spend.
+
+See the [comparison](reports/decomposed-judge-v1-comparison.md) and
+[analysis, field agreement and vote splits](reports/decomposed-judge-v1-analysis.md).
+Focused premise acceptance improves, but the complete pipeline does not pass.
+Voting offers no rescue here. The information and sampling differences limit
+capacity conclusions. No more experiments are launched by this result, larger
+local models remain deferred, and PR #9 must stay draft until human-gold
+validation clears. No labels, rubric or thresholds were changed to help it pass.

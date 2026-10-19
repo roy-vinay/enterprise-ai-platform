@@ -1,0 +1,96 @@
+{
+  "human_validated": false,
+  "diagnostic_only": true,
+  "field_agreement": {
+    "single-call": {
+      "premise_diagnosis": {
+        "matches": 23,
+        "n": 68
+      },
+      "flaw_type": {
+        "matches": 63,
+        "n": 68
+      },
+      "action_taken": {
+        "matches": 54,
+        "n": 68
+      },
+      "evidence_correctness": {
+        "matches": 60,
+        "n": 68
+      },
+      "usefulness": {
+        "matches": 62,
+        "n": 68
+      },
+      "accepted_premise": {
+        "matches": 43,
+        "n": 68
+      },
+      "overclaimed_coverage": {
+        "matches": 57,
+        "n": 68
+      }
+    },
+    "decomposed": {
+      "premise_diagnosis": {
+        "matches": 16,
+        "n": 68
+      },
+      "flaw_type": {
+        "matches": 45,
+        "n": 68
+      },
+      "action_taken": {
+        "matches": 37,
+        "n": 68
+      },
+      "evidence_correctness": {
+        "matches": 57,
+        "n": 68
+      },
+      "usefulness": {
+        "matches": 53,
+        "n": 68
+      },
+      "accepted_premise": {
+        "matches": 61,
+        "n": 68
+      },
+      "overclaimed_coverage": {
+        "matches": 55,
+        "n": 68
+      }
+    },
+    "decomposed-vote": {
+      "premise_diagnosis": {
+        "matches": 15,
+        "n": 68
+      },
+      "flaw_type": {
+        "matches": 45,
+        "n": 68
+      },
+      "action_taken": {
+        "matches": 36,
+        "n": 68
+      },
+      "evidence_correctness": {
+        "matches": 57,
+        "n": 68
+      },
+      "usefulness": {
+        "matches": 53,
+        "n": 68
+      },
+      "accepted_premise": {
+        "matches": 60,
+        "n": 68
+      },
+      "overclaimed_coverage": {
+        "matches": 55,
+        "n": 68
+      }
+    }
+  }
+}
