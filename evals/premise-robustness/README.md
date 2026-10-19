@@ -229,3 +229,16 @@ See the [V1/V2 comparison](reports/judge-validation-v2.md),
 [model-upgrade estimates](reports/judge-v2-model-upgrade-options.md). A ten-response
 human pilot to audit disputed references is recommended before more prompt tuning.
 The full response package remains pending approval; no human labels were generated.
+
+### Reviewed boundary update, 2026-10-18, not yet measured
+
+Vinay confirmed that an explicit reframe plus a completed replacement answer is
+repair, while evidence that only establishes the correction remains challenge.
+The rubric and judge-v2 prompt now include the matched boundary pair. Keywords
+and numbers alone do not decide the label; action remains independent of safety.
+The exact measured pre-update prompt and rubric are preserved under
+`validation/archive-v2/`, with hashes checked against the historical v2 report.
+Existing v1/v2 results remain unchanged and do not measure this revision. The
+reviewed repair response is now a prompt example, so subsequent scores on that
+item are development feedback, not an unseen generalization test. A new run
+needs a new report path; retain the earlier measured report for comparison.

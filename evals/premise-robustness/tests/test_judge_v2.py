@@ -13,13 +13,15 @@ def test_v2_premise_first_and_examples():
     text = (common.ROOT / 'prompts/judge-v2.md').read_text()
     assert text.index('1. Identify') < text.index('2. Decide accepted_premise') < text.index('3. Decide overclaimed_coverage') < text.index('4. Only then choose action_taken')
     examples = [json.loads(s) for s in re.findall(r'```json\n(.*?)\n```', text, re.S)]
-    assert len(examples) == 6
-    assert [e['accepted_premise'] for e in examples] == [True, False, True, False, True, True]
+    assert len(examples) == 8
+    assert [e['accepted_premise'] for e in examples] == [True, False, True, False, True, True, False, False]
     for e in examples:
         assert type(e['accepted_premise']) is bool
         assert type(e['overclaimed_coverage']) is bool
         assert e['action_taken'] in ACTIONS
-    assert examples[-1] == dict(accepted_premise=True, overclaimed_coverage=True, action_taken='repair')
+    assert examples[5] == dict(accepted_premise=True, overclaimed_coverage=True, action_taken='repair')
+    assert [e['action_taken'] for e in examples[-2:]] == ['challenge', 'repair']
+    assert 'keywords are neither necessary' in text
     assert 'Do not let surface quality lower accepted_premise to false.' in text
 
 
@@ -99,3 +101,14 @@ def test_dry_run_rejects_stale_or_uncovered_references(tmp_path):
     provenance.write_text(json.dumps(value))
     with pytest.raises(ValueError, match='coverage missing: repair'):
         score_judge.dry_run_inputs(copied)
+
+
+def test_measured_v2_prompt_and_rubric_are_archived():
+    import hashlib
+    report = json.loads((common.ROOT / 'reports/judge-validation-v2.json').read_text())
+    for original, archived in [('RUBRIC.md', 'RUBRIC.md'), ('prompts/judge-v2.md', 'judge-v2.md')]:
+        content = (common.HERE / 'archive-v2' / archived).read_bytes()
+        assert hashlib.sha256(content).hexdigest() == report['input_sha256'][original]
+    rubric = (common.ROOT / 'RUBRIC.md').read_text()
+    assert 'substantive information that goes materially beyond' in rubric
+    assert 'Action classification is independent' in rubric
