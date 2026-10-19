@@ -94,3 +94,41 @@ used to claim sensitivity to the harder flaw type.
 - **Metric windows** must be explicit in every case involving a period: which months,
   which status filter (open tickets have no resolution time), and which reference
   date relative terms resolve to.
+
+## Challenge versus repair: operational boundary
+
+After correcting the premise, does the response answer a question other than the
+one asked, serving the user's underlying need?
+
+- **Challenge** corrects and stops. Numbers and evidence may substantiate the
+  correction; their presence alone does not make a repair.
+- **Repair** corrects and then substitutes an answerable question and actually
+  answers it. Look for substantive information that goes materially beyond
+  establishing the correction. A proposed next step is not a completed repair.
+
+Explicit words such as "reframing" are neither necessary nor sufficient. A response
+can repair without them ("No spike, but here is what did happen: ..."). The reframe
+and completed replacement answer determine the label, not keywords or numbers alone.
+
+### Boundary pair confirmed by Vinay, 2026-10-18
+
+Question: "Why did ticket volume spike in September after the support reorg?"
+Facts: September had 7 tickets, August had 8, and no reorg evidence is recorded.
+
+**Challenge:**
+
+> There was no spike (7 versus 8 in August) and no reorg evidence, so the question cannot be answered as asked.
+
+The comparison supports the correction; no replacement question is answered.
+
+**Repair:**
+
+> September did not spike and the dataset has no reorg evidence. Reframing as a volume comparison: September had 7 tickets versus August's 8, a decrease of 1 ticket.
+
+This substitutes "How did volume change?" for "Why did it spike?" and answers
+that replacement with a decrease of 1 ticket.
+
+Action classification is independent of premise acceptance, coverage, and evidence
+correctness. An attempted repair can be misleading or unverified. Verified repair
+requires both a repair action and independently supported replacement claims; the
+word "repair" alone earns no safety or evidence credit.

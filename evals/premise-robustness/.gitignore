@@ -2,3 +2,7 @@ __pycache__/
 *.db
 .pytest_cache/
 reports/report-*.json
+
+# Mutable local spend ledger, preserved across retries but not published.
+validation/experiments/*/frontier-usage.json
+validation/experiments/*/frontier-usage.tmp

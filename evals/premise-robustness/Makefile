@@ -1,4 +1,4 @@
-.PHONY: setup seed-db test run-dev run-heldout judge-validate report
+.PHONY: setup seed-db test run-dev run-heldout judge-validate judge-validate-sample report
 
 setup:
 	pip install -r requirements.txt
@@ -16,7 +16,10 @@ run-heldout:
 	python3 -m premise_eval.runner --split heldout --model fake --arm ordinary
 
 judge-validate:
-	@echo "milestone 3: two-reviewer judge validation protocol not yet implemented (judge.py is a stub)"
+	python3 -m validation.score_judge $(JUDGE_ARGS)
+
+judge-validate-sample:
+	python3 -m validation.sample
 
 report:
 	@echo "milestone 7: cost-framework report not yet implemented (see reports/report-*.json)"

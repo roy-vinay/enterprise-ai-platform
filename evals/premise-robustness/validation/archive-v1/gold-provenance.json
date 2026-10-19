@@ -1,0 +1,15 @@
+{
+  "adjudication_sha256": "c9584c0f4a2b65c125ca2d57b698e7f57797546645a36a062d3ad6199d18c5bf",
+  "gold_sha256": "56bd8e1093c62941b2079a2d622ec96e70a0be12c10253685e64be380410f411",
+  "human_validated": false,
+  "reference_protocol": "agent_reference",
+  "reference_type": "agent_generated_reference",
+  "resolutions_sha256": "4e2c418d59819ee904af69d020e7119efab22c93d9a36ae54f17d36b563fc158",
+  "resolved_by": "AI adjudicator",
+  "responses_sha256": "f425e5b7daed846fd92b64ef4b22f5eaf6d7cc2b6ecc21ab5e759ddd53e7db14",
+  "reviewer_a": "Agent A (drafting for Vinay)",
+  "reviewer_a_sha256": "c88e669dc695466994693910816b9f03739829bcd0084aeb697d32e4ab9810c7",
+  "reviewer_b": "Agent B (drafting for Ben)",
+  "reviewer_b_sha256": "070fd70ef3b0b523d50d84a63dbab207ed19696ede9424e1724c41d011a6c7c9",
+  "rubric_sha256": "aeafa1e564f99f75ccaf4571aaf872612b1d7ea2483efb1069c0ef5af17a63e3"
+}

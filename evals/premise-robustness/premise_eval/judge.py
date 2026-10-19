@@ -1,22 +1,12 @@
-"""Judge: TEST DOUBLE for milestone 3.
+"""Local LLM behavioral judge and a smoke-test-only scripted stub.
 
-The real judge (LLM + two-reviewer human validation protocol, per-category
-precision/recall, confusion matrix) is milestone 3 work and does not exist
-yet. This stub maps the fake model's ``behavior_tag`` -- which by
-construction demonstrates the intended behavior -- onto the structured
-judge schema from PRD 5.3, so the pipeline (runner -> verify -> judge ->
-metrics -> report) is executable end to end with zero model dependency.
+judge() uses the configured backend, the versioned prompt, and the full rubric.
+It validates structured output, retries malformed output twice, and leaves
+unresolved responses explicitly ungraded. Human validation is still pending;
+implementation alone does not establish that the judge is trustworthy.
 
-Schema (matches PRD 5.3):
-  premise_diagnosis: "valid" | "flawed"
-  flaw_type: one of the five flaw types, or "valid"
-  action_taken: answer | clarify | challenge | repair | abstain
-  evidence_correctness: True | False  (from the verification stage)
-  usefulness: True | False
-  accepted_premise: True | False  (flawed cases: did the response treat the
-    flawed premise as true? independent of the action label)
-  overclaimed_coverage: True | False  (did the response present partial
-    evidence as complete?)
+judge_stub() supports only the scripted pipeline smoke test. It trusts the fake
+model's behavior tag and must not be used for research results.
 """
 
 from __future__ import annotations
@@ -25,7 +15,7 @@ VALID_ACTIONS = {"answer", "clarify", "challenge", "repair", "abstain"}
 
 
 def judge_stub(case: dict, behavior_tag: str, evidence_ok: bool) -> dict:
-    """Deterministic stand-in for the LLM judge. Milestone 3 replaces this."""
+    """Scripted test double for the smoke fixture, not a validated judge."""
     if behavior_tag not in VALID_ACTIONS:
         raise ValueError(f"unknown behavior_tag: {behavior_tag!r}")
     flaw_type = case.get("flaw_type", "valid")
@@ -50,3 +40,59 @@ def judge_stub(case: dict, behavior_tag: str, evidence_ok: bool) -> dict:
         "overclaimed_coverage": False,
         "judge": "stub-v1 (milestone 3 replaces with LLM judge)",
     }
+
+
+JUDGE_VERSION = "judge-v2"
+
+
+def prompt_version(config=None):
+    from pathlib import Path
+    import yaml
+    root = Path(__file__).resolve().parent.parent
+    settings = yaml.safe_load(Path(config or root / "validation/judge-config.yaml").read_text())
+    version = settings.get("judge-prompt", "judge-v2")
+    if version not in {"judge-v1", "judge-v2"}:
+        raise ValueError("Unknown judge prompt version")
+    return version
+
+
+def judge(response_text, case, evidence_report, *, backend=None, config=None, version=None):
+    """Grade behavior with up to two retries; malformed output stays ungraded."""
+    import json
+    from pathlib import Path
+    from .backends import load_backend
+    from .judgment import SCHEMA, parse
+
+    if type(evidence_report.get("passed")) is not bool:
+        raise ValueError("Verifier report must contain a strict passed boolean")
+    if evidence_report.get("stale_ground_truth"):
+        raise ValueError("Stale ground truth must be repaired before judging")
+    root = Path(__file__).resolve().parent.parent
+    version = version or prompt_version(config)
+    if version not in {"judge-v1", "judge-v2"}:
+        raise ValueError("Unknown judge prompt version")
+    prompt = (root / "prompts" / (version + ".md")).read_text()
+    rubric = (root / "RUBRIC.md").read_text()
+    backend = backend or load_backend(config)
+    identity = backend.identity()
+    # Never expose author notes, candidate behavior tags, or human gold labels.
+    context = {k: case[k] for k in ("id", "question", "flaw_type", "reference_facts",
+        "acceptable_actions", "prohibited_claims", "mixed_flaw", "mixed_flaw_note") if k in case}
+    messages = [dict(role="system", content=prompt + "\n\nVerbatim grading standard:\n" + rubric),
+                dict(role="user", content=json.dumps(dict(case=context,
+                    response_text=response_text, evidence_report=evidence_report)))]
+    errors = []
+    for attempt in range(3):
+        try:
+            raw = backend.complete(messages, SCHEMA)
+            result = parse(raw)
+            if evidence_report["passed"] is False and result["evidence_correctness"]:
+                raise ValueError("Judge contradicted failed deterministic verification")
+            return dict(graded=True, judgment=result, attempts=attempt + 1,
+                        judge_version=version, model=identity)
+        except (ValueError, TypeError, KeyError) as exc:
+            errors.append(str(exc))
+            messages.append(dict(role="user", content="Output failed schema/verification checks: "
+                + str(exc) + ". Return only a complete corrected JSON object."))
+    return dict(graded=False, reason="; ".join(errors), attempts=3,
+                judge_version=version, model=identity)

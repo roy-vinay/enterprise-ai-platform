@@ -1,0 +1,6 @@
+backend: api
+model: claude-sonnet-5-5
+timeout: 120
+judge-prompt: judge-v2
+budget_usd: 5
+max_calls: 204

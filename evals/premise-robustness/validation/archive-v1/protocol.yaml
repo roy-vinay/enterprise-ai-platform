@@ -1,0 +1,11 @@
+mode: agent_reference
+reference_type: agent_generated_reference
+human_validated: false
+authorized_by: Vinay Roy
+authorized_on: '2026-10-18'
+meaning: Agreement with agent-generated labels, not human-validated accuracy.
+limitations:
+  - Both labeling agents ran separately in the same assistant environment.
+  - Shared model biases and correlated labeling errors are possible.
+  - Generator model versions were not independently recorded.
+  - An AI adjudicator resolved the three disagreements.

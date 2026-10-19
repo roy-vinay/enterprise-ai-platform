@@ -1,0 +1,7 @@
+# Official quantization tag verified in the Ollama library, 2026-10-18.
+# https://ollama.com/library/qwen3:8b-q4_K_M
+backend: ollama
+model: qwen3:8b-q4_K_M
+url: http://127.0.0.1:11434
+timeout: 120
+judge-prompt: judge-v2

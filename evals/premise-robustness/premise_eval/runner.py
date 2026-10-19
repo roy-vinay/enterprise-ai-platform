@@ -93,9 +93,21 @@ def run(
     arm: str,
     db_path: Path | str,
     case_ids: list[str] | None = None,
+    judge_name: str = "stub",
+    judge_config: str | None = None,
 ) -> dict:
     if split == "heldout":
         check_heldout_ready()
+    if judge_name not in {"stub", "llm"}:
+        raise ValueError("judge must be stub or llm")
+    backend = None
+    if judge_name == "llm":
+        from .backends import load_backend
+        from validation.score_judge import require_validated
+        backend = load_backend(judge_config)
+        require_validated(backend, config=judge_config)
+    if split == "heldout" and judge_name != "llm":
+        raise ValueError("Held-out runs require a validated LLM judge")
     if model_name != "fake":
         raise ValueError(f"thin slice supports only the fake model, got {model_name!r}")
     if arm not in versions.PROMPT_VERSIONS:
@@ -123,9 +135,14 @@ def run(
             response = fake_model.respond(case["id"])
             claims = response.get("claims", {})
             claim_check = verify_mod.verify_response_claims(case, claims, con)
-            judgment = judge_mod.judge_stub(
-                case, response["behavior_tag"], claim_check["passed"]
-            )
+            if judge_name == "stub":
+                judgment = judge_mod.judge_stub(case, response["behavior_tag"], claim_check["passed"])
+            else:
+                evidence = dict(claim_check, declared_claims=claims)
+                result = judge_mod.judge(response["response_text"], case, evidence, backend=backend, config=judge_config)
+                if not result["graded"]:
+                    raise ValueError("Ungraded judge output: " + result["reason"])
+                judgment = result["judgment"]
             judgment["case_id"] = case["id"]
             judgments.append(judgment)
             case_results.append(
@@ -158,6 +175,9 @@ def run(
             "prompt_version": versions.PROMPT_VERSIONS[arm],
             "model": model_name,
             "model_version": versions.MODEL_VERSION,
+            "judge_version": judge_mod.prompt_version(judge_config) if judge_name == "llm" else "stub-v1",
+            "judge_model": backend.identity() if backend else "scripted-stub",
+            "judge_prompt_sha256": hashlib.sha256((PKG_ROOT / "prompts" / ((judge_mod.prompt_version(judge_config) if judge_name == "llm" else "judge-v1") + ".md")).read_bytes()).hexdigest(),
             "case_set": versions.CASE_SET_VERSION,
             "heldout_manifest_sha256": manifest_sha256(),
             "harness": "premise_eval v0.1",
@@ -183,6 +203,9 @@ def main() -> None:
     parser.add_argument("--model", default="fake")
     parser.add_argument("--arm", default="ordinary", choices=["ordinary", "critique", "evidence"])
     parser.add_argument("--db", default=str(db_mod.DEFAULT_DB_PATH))
+    parser.add_argument("--judge", choices=["llm", "stub"], default="stub")
+    parser.add_argument("--judge-config")
+    parser.add_argument("--case-ids", nargs="+")
     parser.add_argument("--out", default=None, help="report path (default: reports/report-<ts>.json)")
     args = parser.parse_args()
 
@@ -192,9 +215,10 @@ def main() -> None:
         sys.exit(2)
 
     try:
-        report = run(args.split, args.model, args.arm, db_path)
-    except HeldoutNotReadyError as exc:
-        print(f"refusing held-out run: {exc}", file=sys.stderr)
+        report = run(args.split, args.model, args.arm, db_path, case_ids=args.case_ids,
+                     judge_name=args.judge, judge_config=args.judge_config)
+    except (HeldoutNotReadyError, ValueError, OSError) as exc:
+        print(f"refusing evaluation run: {exc}", file=sys.stderr)
         sys.exit(3)
 
     REPORTS_ROOT.mkdir(parents=True, exist_ok=True)

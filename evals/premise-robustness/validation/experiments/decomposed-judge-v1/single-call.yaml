@@ -1,0 +1,3 @@
+mode: single-call
+temperature: 0
+seeds: [17]
