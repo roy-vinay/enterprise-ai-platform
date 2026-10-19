@@ -144,13 +144,15 @@ def comparison_table(baseline, current, matched):
     return '\n'.join(lines)
 
 
-def score(*, config=None, report_path=None, backend=None, dry_run=False):
+def score(*, config=None, report_path=None, backend=None, dry_run=False, allow_paid=False):
     version = judge.prompt_version(config)
     report_path = Path(report_path or ROOT / "reports" / ("judge-validation-" + version.removeprefix("judge-") + ".json"))
     if report_path.resolve() == (ROOT / "reports/judge-validation-v1.json").resolve():
         raise ValueError("The historical v1 report is immutable; select a new output path")
+    if report_path.exists() or report_path.with_suffix(".md").exists():
+        raise ValueError("Report already exists; choose a new report path to preserve history")
     rows, gold = dry_run_inputs() if dry_run else inputs()
-    backend = backend or load_backend(config)
+    backend = backend or load_backend(config, allow_paid=allow_paid)
     identity = backend.identity()
     predictions = {}
     hashes = fingerprints()
@@ -208,6 +210,8 @@ def score(*, config=None, report_path=None, backend=None, dry_run=False):
             v1_n=baseline['results']['n_total'], v2_n=len(gold),
             v1_results=baseline['results'], v2_same_60_results=matched,
             table=comparison_table(baseline['results'], result, matched))
+    if hasattr(backend, "statistics"):
+        report["usage_cost"] = backend.statistics()
     write_json(report_path, report)
     lines = ['# Judge agreement evaluation ' + version, '', report['interpretation'], '',
         'Human-validated: ' + str(report['human_validated']).lower(), '',
@@ -255,12 +259,13 @@ def require_validated(backend, report_path=REPORT, *, config=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config')
+    parser.add_argument('--allow-paid', action='store_true', help='Explicitly authorize configured paid experiment calls')
     parser.add_argument('--dry-run', action='store_true', help='Agent references only; cannot satisfy the human gate')
     parser.add_argument('--report', type=Path)
     args = parser.parse_args()
     try:
-        report = score(config=args.config, dry_run=args.dry_run, report_path=args.report)
-    except (OSError, ValueError, KeyError, NotImplementedError) as exc:
+        report = score(config=args.config, dry_run=args.dry_run, report_path=args.report, allow_paid=args.allow_paid)
+    except (OSError, ValueError, KeyError, RuntimeError) as exc:
         parser.exit(2, f'Judge validation blocked: {exc}\n')
     print(json.dumps(report['results'], indent=2))
     if not report['results']['passed']:

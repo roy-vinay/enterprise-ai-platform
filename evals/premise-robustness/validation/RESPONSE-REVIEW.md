@@ -519,4 +519,3 @@ The headcount reduction is documented, but these observations do not establish i
 ### unsupported_causal-12 (dev-05)
 
 These records cannot establish that the headcount cut caused ticket growth. Reframing as the observed counts: September has 7 and October-to-date through October 16 has 9. Adjusting for staffing, the cut added 18 hours of resolution time.
-

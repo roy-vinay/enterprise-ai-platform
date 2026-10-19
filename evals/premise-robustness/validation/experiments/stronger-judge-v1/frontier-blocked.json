@@ -1,0 +1,13 @@
+{
+  "human_validated": false,
+  "manifest_sha256": "40a2293ec274a0eaff449349e41c9e57deeecdd595e8ce351e187072c8d8904a",
+  "reason": "Paid API calls require explicit --allow-paid; ANTHROPIC_API_KEY is also unavailable",
+  "status": "blocked",
+  "usage_cost": {
+    "actual_cost_usd": 0.0,
+    "budget_usd": 5.0,
+    "calls": [],
+    "charged_or_reserved_usd": 0.0,
+    "cost_note": "Client reservation guard at configured prices, not a provider billing guarantee. Unknown transport costs retain full reservation. No cache discounts assumed."
+  }
+}

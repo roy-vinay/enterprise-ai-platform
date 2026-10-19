@@ -58,7 +58,8 @@ def fingerprints():
              HERE / 'protocol.yaml', HERE / 'responses.jsonl', HERE / 'judge-config.yaml', HERE / 'thresholds.yaml',
              HERE / 'score_judge.py', HERE / 'common.py', HERE / 'adjudicate.py',
              ROOT / 'premise_eval/judge.py', ROOT / 'premise_eval/judgment.py',
-             ROOT / 'premise_eval/backends.py', ROOT / 'premise_eval/verify.py',
+             ROOT / 'premise_eval/backends.py', ROOT / 'premise_eval/frontier.py',
+             HERE / 'compare_judges.py', ROOT / 'premise_eval/verify.py',
              ROOT / 'datasets/support/schema.sql', ROOT / 'datasets/support/seed.sql',
              *sorted((ROOT / 'cases/dev').glob('*.yaml'))]
     files += sorted((HERE / 'ai-drafts').glob('*.csv'))

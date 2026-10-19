@@ -1,4 +1,4 @@
-"""Local judge transport. No keys, downloads, or paid calls."""
+"""Local judge transport and an explicitly enabled frontier experiment backend."""
 from __future__ import annotations
 
 import json
@@ -61,18 +61,16 @@ class OllamaBackend(ModelBackend):
         return result['message']['content']
 
 
-class ApiBackend(ModelBackend):
-    def identity(self):
-        raise NotImplementedError('Frontier API backend is reserved for milestone 5')
-
-    def complete(self, messages, schema):
-        raise NotImplementedError('No paid API backend is wired')
+from .frontier import AnthropicBackend as ApiBackend
 
 
-def load_backend(path=None):
+def load_backend(path=None, *, allow_paid=False):
     config = yaml.safe_load(Path(path or ROOT / 'validation/judge-config.yaml').read_text())
     if config['backend'] == 'ollama':
         return OllamaBackend(model=config['model'], url=config['url'], timeout=config['timeout'])
     if config['backend'] == 'api':
-        return ApiBackend()
+        return ApiBackend(model=config["model"], timeout=config.get("timeout",120),
+            allow_paid=allow_paid, budget_usd=config.get("budget_usd",5),
+            max_calls=config.get("max_calls",204),
+            ledger_path=Path(path or ROOT / "validation/judge-config.yaml").parent / "frontier-usage.json")
     raise ValueError('Unknown judge backend')

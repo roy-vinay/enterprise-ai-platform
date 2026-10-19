@@ -109,7 +109,7 @@ agent-generated labels. It does not establish human-validated accuracy.
 Ollama uses the official `qwen3:8b-q4_K_M` tag. The backend records the resolved
 model digest, temperature 0, seed 17, an 8192-token context, disabled thinking,
 and a 512-token output cap. These settings reduce variation, not promise
-bit-identical results across hardware or runtime versions. No paid backend is wired.
+bit-identical results across hardware or runtime versions. Paid calls remain disabled by default. The stronger-judge experiment now has an explicitly enabled Claude API adapter; it requires separate API credentials and a budget.
 
 The judge receives the versioned prompt plus **RUBRIC.md verbatim**. It validates
 all enum and boolean fields, rejects duplicate keys, retries malformed output
@@ -242,3 +242,37 @@ Existing v1/v2 results remain unchanged and do not measure this revision. The
 reviewed repair response is now a prompt example, so subsequent scores on that
 item are development feedback, not an unseen generalization test. A new run
 needs a new report path; retain the earlier measured report for comparison.
+
+## Controlled stronger-judge experiment
+
+The reviewed judge-v2 prompt and rubric are frozen with the 68 response IDs,
+agent references, thresholds, implementation hashes, and both arm configurations
+in `validation/experiments/stronger-judge-v1/manifest.json`. Both arms use those
+same inputs. The local arm is Qwen3-8B; the frontier arm is Claude Sonnet 5.5.
+The Claude model does not accept non-default sampling settings, so the adapter
+omits temperature/seed, uses `between_tools` thinking and high effort, and records
+these differences. Treat the result as a comparison of configured judges, not
+isolated model size or a deterministically reproducible weights experiment.
+
+See [experiment instructions](validation/experiments/stronger-judge-v1/README.md).
+The frontier backend requires both explicit paid-call enablement and an API key
+provided through the environment. Claude chat subscriptions do not supply that
+credential. No credentials are read from chat or written to reports.
+
+The client uses token-count preflight, a USD 5 reservation budget, at most 204
+generation attempts, a 512-token output limit, persistent usage accounting, and
+no automatic transport retry. Provider refusals and truncated outputs are metered
+and retried only through the existing maximum-three-attempt grading protocol.
+This client guard is not a provider-side billing guarantee. API outages, missing
+credentials or budget exhaustion produce blocked status, never partial passing
+results. Earlier reports cannot be overwritten. A completed dry-run comparison
+still cannot authorize downstream use or merging.
+
+### Stronger-judge experiment: local arm measured, frontier blocked
+
+The frozen reviewed-prompt 8B arm grades all 68 responses but still fails:
+action F1 0.769, misleading recall 63.16%, and repair recall 3/8 (37.5%).
+The frontier arm has no scores because API credentials are unavailable and
+paid calls are not enabled. No API generation was performed. See the
+[comparison status](reports/stronger-judge-v1-comparison.md) and
+[experiment analysis](reports/stronger-judge-v1-status.md). The PR remains draft.

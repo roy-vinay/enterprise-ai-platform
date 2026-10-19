@@ -61,7 +61,7 @@ def test_verification_cannot_be_overruled():
 def test_backend_constraints():
     with pytest.raises(ValueError): OllamaBackend(url='https://remote.example')
     with pytest.raises(ValueError): OllamaBackend(model='qwen3:latest')
-    with pytest.raises(NotImplementedError): ApiBackend().complete([], {})
+    with pytest.raises(RuntimeError, match="allow-paid"): ApiBackend().complete([], {})
 
 
 def test_ollama_fixed_options_and_digest(monkeypatch):
